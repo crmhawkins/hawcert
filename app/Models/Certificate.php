@@ -16,6 +16,7 @@ class Certificate extends Model
         'common_name',
         'organization',
         'organizational_unit',
+        'email',
         'name',
         'description',
         'valid_from',

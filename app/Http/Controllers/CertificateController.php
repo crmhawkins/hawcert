@@ -35,6 +35,7 @@ class CertificateController extends Controller
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
             'description' => 'nullable|string',
             'valid_from' => 'nullable|date',
             'valid_until' => 'nullable|date|after:valid_from',
@@ -56,7 +57,7 @@ class CertificateController extends Controller
         $certData = $certGenerator->generateX509Certificate([
             'name' => $validated['name'],
             'common_name' => $validated['name'],
-            'email' => $user->email,
+            'email' => $validated['email'],
             'organization' => $validated['organization'] ?? null,
             'organizational_unit' => $validated['organizational_unit'] ?? null,
             'valid_from' => $validFrom,
@@ -72,6 +73,7 @@ class CertificateController extends Controller
             'common_name' => $certData['common_name'],
             'organization' => $certData['organization'],
             'organizational_unit' => $certData['organizational_unit'],
+            'email' => $validated['email'],
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'valid_from' => $validFrom,
@@ -112,6 +114,7 @@ class CertificateController extends Controller
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
             'description' => 'nullable|string',
             'valid_from' => 'nullable|date',
             'valid_until' => 'nullable|date|after:valid_from',
@@ -126,6 +129,7 @@ class CertificateController extends Controller
         $certificate->update([
             'user_id' => $validated['user_id'],
             'name' => $validated['name'],
+            'email' => $validated['email'],
             'description' => $validated['description'] ?? null,
             'valid_from' => $validated['valid_from'] ?? $certificate->valid_from,
             'valid_until' => ($validated['never_expires'] ?? false) ? null : ($validated['valid_until'] ?? $certificate->valid_until),
