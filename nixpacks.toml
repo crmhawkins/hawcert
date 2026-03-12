@@ -8,6 +8,5 @@ cmds = [
 ]
 
 [start]
-# 1. Cambiamos 'node' por 'sh' (o eliminamos si tiene permisos de ejecución)
-# 2. Corregimos la ruta a ./assets/... (relativa a /app)
-cmd = "sh ./assets/scripts/pre-start.sh && php-fpm -D && nginx -g 'daemon off;'"
+# Eliminamos el "node /assets/scripts/pre-start.sh" que sobraba
+cmd = "php-fpm -D && nginx -g 'daemon off;'"
