@@ -1,5 +1,4 @@
 [phases.setup]
-# Cambiamos php83 por php84
 nixPkgs = ["php84", "php84Packages.composer", "nginx", "nodejs_22"]
 
 [phases.build]
@@ -9,4 +8,6 @@ cmds = [
 ]
 
 [start]
-cmd = "node /assets/scripts/pre-start.sh && php-fpm -D && nginx -g 'daemon off;'"
+# 1. Cambiamos 'node' por 'sh' (o eliminamos si tiene permisos de ejecución)
+# 2. Corregimos la ruta a ./assets/... (relativa a /app)
+cmd = "sh ./assets/scripts/pre-start.sh && php-fpm -D && nginx -g 'daemon off;'"
