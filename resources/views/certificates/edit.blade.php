@@ -25,6 +25,22 @@
                 <input type="text" name="name" id="name" required value="{{ old('name', $certificate->name) }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
             </div>
 
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                <input type="email" name="email" id="email" required value="{{ old('email', $certificate->email) }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Email asociado al certificado (puede ser diferente al del usuario)</p>
+            </div>
+
+            <div>
+                <label for="organization" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Organización</label>
+                <input type="text" name="organization" id="organization" value="{{ old('organization', $certificate->organization ?? 'HawCert') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            </div>
+
+            <div>
+                <label for="organizational_unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unidad Organizacional</label>
+                <input type="text" name="organizational_unit" id="organizational_unit" value="{{ old('organizational_unit', $certificate->organizational_unit ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            </div>
+
             <div class="sm:col-span-2">
                 <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
                 <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">{{ old('description', $certificate->description) }}</textarea>

@@ -38,6 +38,11 @@
             </div>
 
             <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Email del Certificado</dt>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $certificate->email ?? 'No especificado' }}</dd>
+            </div>
+
+            <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Clave del Certificado</dt>
                 <dd class="mt-1 text-sm text-gray-900 dark:text-white font-mono break-all">{{ $certificate->certificate_key }}</dd>
             </div>

@@ -26,6 +26,12 @@
             </div>
 
             <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                <input type="email" name="email" id="email" required value="{{ old('email') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Email asociado al certificado (puede ser diferente al del usuario)</p>
+            </div>
+
+            <div>
                 <label for="organization" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Organización</label>
                 <input type="text" name="organization" id="organization" value="{{ old('organization', 'HawCert') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
             </div>

@@ -120,22 +120,69 @@ class CertificateController extends Controller
             'valid_until' => 'nullable|date|after:valid_from',
             'never_expires' => 'boolean',
             'is_active' => 'boolean',
+            'organization' => 'nullable|string|max:255',
+            'organizational_unit' => 'nullable|string|max:255',
             'services' => 'nullable|array',
             'services.*' => 'exists:services,id',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
         ]);
 
-        $certificate->update([
-            'user_id' => $validated['user_id'],
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'description' => $validated['description'] ?? null,
-            'valid_from' => $validated['valid_from'] ?? $certificate->valid_from,
-            'valid_until' => ($validated['never_expires'] ?? false) ? null : ($validated['valid_until'] ?? $certificate->valid_until),
-            'never_expires' => $validated['never_expires'] ?? false,
-            'is_active' => $validated['is_active'] ?? $certificate->is_active,
-        ]);
+        $validFrom = $validated['valid_from'] ?? $certificate->valid_from;
+        $validUntil = ($validated['never_expires'] ?? false) ? null : ($validated['valid_until'] ?? $certificate->valid_until);
+        
+        // Verificar si hay cambios que requieren regenerar el certificado X.509
+        $needsRegeneration = $certificate->x509_certificate && (
+            $certificate->name !== $validated['name'] ||
+            $certificate->email !== $validated['email'] ||
+            ($certificate->organization ?? '') !== ($validated['organization'] ?? '') ||
+            ($certificate->organizational_unit ?? '') !== ($validated['organizational_unit'] ?? '') ||
+            $certificate->valid_from->format('Y-m-d H:i:s') !== ($validFrom instanceof \Carbon\Carbon ? $validFrom->format('Y-m-d H:i:s') : $validFrom) ||
+            ($certificate->valid_until ? $certificate->valid_until->format('Y-m-d H:i:s') : null) !== ($validUntil ? ($validUntil instanceof \Carbon\Carbon ? $validUntil->format('Y-m-d H:i:s') : $validUntil) : null) ||
+            $certificate->never_expires !== ($validated['never_expires'] ?? false)
+        );
+
+        if ($needsRegeneration) {
+            // Regenerar certificado X.509 con los nuevos datos
+            $certGenerator = new CertificateGeneratorService();
+            $certData = $certGenerator->generateX509Certificate([
+                'name' => $validated['name'],
+                'common_name' => $validated['name'],
+                'email' => $validated['email'],
+                'organization' => $validated['organization'] ?? null,
+                'organizational_unit' => $validated['organizational_unit'] ?? null,
+                'valid_from' => $validFrom instanceof \Carbon\Carbon ? $validFrom : \Carbon\Carbon::parse($validFrom),
+                'valid_until' => $validUntil ? ($validUntil instanceof \Carbon\Carbon ? $validUntil : \Carbon\Carbon::parse($validUntil)) : null,
+                'never_expires' => $validated['never_expires'] ?? false,
+            ]);
+
+            $certificate->update([
+                'user_id' => $validated['user_id'],
+                'x509_certificate' => $certData['x509_certificate'],
+                'private_key' => $certData['private_key'],
+                'common_name' => $certData['common_name'],
+                'organization' => $certData['organization'],
+                'organizational_unit' => $certData['organizational_unit'],
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'description' => $validated['description'] ?? null,
+                'valid_from' => $validFrom instanceof \Carbon\Carbon ? $validFrom : \Carbon\Carbon::parse($validFrom),
+                'valid_until' => $validUntil,
+                'never_expires' => $validated['never_expires'] ?? false,
+                'is_active' => $validated['is_active'] ?? $certificate->is_active,
+            ]);
+        } else {
+            $certificate->update([
+                'user_id' => $validated['user_id'],
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'description' => $validated['description'] ?? null,
+                'valid_from' => $validFrom instanceof \Carbon\Carbon ? $validFrom : \Carbon\Carbon::parse($validFrom),
+                'valid_until' => $validUntil,
+                'never_expires' => $validated['never_expires'] ?? false,
+                'is_active' => $validated['is_active'] ?? $certificate->is_active,
+            ]);
+        }
 
         if (isset($validated['services'])) {
             $certificate->services()->sync($validated['services']);
@@ -150,7 +197,7 @@ class CertificateController extends Controller
         }
 
         return redirect()->route('certificates.index')
-            ->with('success', 'Certificado actualizado exitosamente.');
+            ->with('success', 'Certificado actualizado exitosamente' . ($needsRegeneration ? ' (certificado X.509 regenerado)' : '') . '.');
     }
 
     public function destroy(Certificate $certificate)
