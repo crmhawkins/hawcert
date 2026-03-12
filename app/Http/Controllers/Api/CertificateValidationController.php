@@ -80,11 +80,10 @@ class CertificateValidationController extends Controller
             'permissions' => $certificate->permissions->pluck('slug')->toArray(),
         ], $expiresAt);
 
-        Log::info('Certificado validado exitosamente', [
-            'certificate_id' => $certificate->id,
+        Log::info('✅ Certificado validado exitosamente', [
             'user_id' => $certificate->user_id,
-            'service_slug' => $serviceSlug,
-            'origin' => $origin,
+            'user_email' => $certificate->email,
+            'access_token' => substr($accessToken, 0, 20) . '...',
         ]);
 
         return response()->json([
@@ -94,12 +93,13 @@ class CertificateValidationController extends Controller
             'user' => [
                 'id' => $certificate->user->id,
                 'name' => $certificate->user->name,
-                'email' => $certificate->user->email,
+                'email' => $certificate->email, // Email del certificado, no del usuario
             ],
             'permissions' => $certificate->permissions->pluck('slug')->toArray(),
             'certificate' => [
                 'id' => $certificate->id,
                 'name' => $certificate->name,
+                'email' => $certificate->email,
                 'valid_until' => $certificate->valid_until ? $certificate->valid_until->toIso8601String() : null,
                 'never_expires' => $certificate->never_expires,
             ],

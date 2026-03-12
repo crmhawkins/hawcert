@@ -110,12 +110,10 @@ class AccessValidationController extends Controller
             // Generar key de acceso temporal
             $accessKey = $this->generateAccessKey($certificate, $serviceSlug, $targetUrl, $clientIp);
 
-            Log::info('Key de acceso generada exitosamente', [
-                'certificate_id' => $certificate->id,
-                'service_slug' => $serviceSlug,
-                'url' => $targetUrl,
-                'client_ip' => $clientIp,
-                'key_id' => $accessKey->id,
+            Log::info('✅ Certificado validado exitosamente', [
+                'user_id' => $certificate->user_id,
+                'user_email' => $certificate->email,
+                'access_key' => $accessKey->key,
             ]);
 
             return response()->json([
@@ -129,7 +127,12 @@ class AccessValidationController extends Controller
                 'user' => [
                     'id' => $certificate->user->id,
                     'name' => $certificate->user->name,
-                    'email' => $certificate->user->email,
+                    'email' => $certificate->email, // Email del certificado, no del usuario
+                ],
+                'certificate' => [
+                    'id' => $certificate->id,
+                    'name' => $certificate->name,
+                    'email' => $certificate->email,
                 ],
                 'permissions' => $certificate->permissions->pluck('slug')->toArray(),
             ], 200);

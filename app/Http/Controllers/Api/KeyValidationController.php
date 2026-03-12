@@ -151,11 +151,12 @@ class KeyValidationController extends Controller
                     'id' => $accessKey->certificate->id,
                     'name' => $accessKey->certificate->name,
                     'common_name' => $accessKey->certificate->common_name,
+                    'email' => $accessKey->certificate->email, // Email del certificado
                 ],
                 'user' => [
                     'id' => $accessKey->certificate->user->id,
                     'name' => $accessKey->certificate->user->name,
-                    'email' => $accessKey->certificate->user->email,
+                    'email' => $accessKey->certificate->email, // Email del certificado, no del usuario
                 ],
                 'service' => [
                     'slug' => $accessKey->service_slug,
