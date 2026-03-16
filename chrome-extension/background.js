@@ -1,0 +1,91 @@
+// Background service worker para HawCert Auto-Fill
+
+// Configuración por defecto
+const DEFAULT_CONFIG = {
+  apiUrl: 'https://hawcert.hawkins.es/api',
+  certificate: null,
+};
+
+// Inicializar configuración
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.get(['config'], (result) => {
+    if (!result.config) {
+      chrome.storage.local.set({ config: DEFAULT_CONFIG });
+    }
+  });
+});
+
+// Mantener el service worker activo
+chrome.runtime.onConnect.addListener((port) => {
+  // Mantener conexión activa
+});
+
+// Escuchar mensajes del content script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Manejar mensajes de forma asíncrona
+  if (request.action === 'getCredentials') {
+    getCredentials(request.url)
+      .then(credentials => {
+        sendResponse({ success: true, credentials });
+      })
+      .catch(error => {
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // Mantener el canal abierto para respuesta asíncrona
+  }
+  
+  if (request.action === 'getConfig') {
+    chrome.storage.local.get(['config'], (result) => {
+      sendResponse({ config: result.config || DEFAULT_CONFIG });
+    });
+    return true;
+  }
+
+  // Si no se maneja el mensaje, devolver false
+  return false;
+});
+
+/**
+ * Obtiene credenciales desde la API de HawCert
+ */
+async function getCredentials(url) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(['config'], async (result) => {
+      const config = result.config || DEFAULT_CONFIG;
+      
+      if (!config.certificate) {
+        reject(new Error('No hay certificado configurado. Por favor, configura tu certificado en las opciones.'));
+        return;
+      }
+
+      if (!config.apiUrl) {
+        reject(new Error('No hay URL de API configurada. Por favor, configura la URL en las opciones.'));
+        return;
+      }
+
+      try {
+        const response = await fetch(`${config.apiUrl}/get-credentials`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            certificate: config.certificate,
+            url: url,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          reject(new Error(data.message || 'Error al obtener credenciales'));
+          return;
+        }
+
+        resolve(data.credential);
+      } catch (error) {
+        reject(new Error(`Error de red: ${error.message}`));
+      }
+    });
+  });
+}

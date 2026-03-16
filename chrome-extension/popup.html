@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 300px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+    }
+    h2 {
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      color: #1F2937;
+    }
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .status.success {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+    .status.error {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+    .status.info {
+      background: #DBEAFE;
+      color: #1E40AF;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #4F46E5;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 8px;
+    }
+    button:hover {
+      background: #4338CA;
+    }
+    button:disabled {
+      background: #9CA3AF;
+      cursor: not-allowed;
+    }
+    .link {
+      color: #4F46E5;
+      text-decoration: none;
+      font-size: 12px;
+      display: block;
+      text-align: center;
+      margin-top: 12px;
+    }
+    .link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h2>HawCert Auto-Fill</h2>
+  <div id="status" class="status info">Cargando...</div>
+  <button id="fillNow">Rellenar ahora</button>
+  <a href="options.html" target="_blank" class="link">Configuración</a>
+
+  <script src="popup.js"></script>
+</body>
+</html>

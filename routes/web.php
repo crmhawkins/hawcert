@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CertificateValidatorController;
+use App\Http\Controllers\CredentialController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +20,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('certificates', CertificateController::class);
     Route::get('certificates/{certificate}/download', [CertificateController::class, 'download'])->name('certificates.download');
     Route::resource('services', ServiceController::class);
+    Route::resource('credentials', CredentialController::class);
     
     Route::get('/validator', [CertificateValidatorController::class, 'index'])->name('validator.index');
     Route::post('/validator/validate', [CertificateValidatorController::class, 'validate'])->name('validator.validate');

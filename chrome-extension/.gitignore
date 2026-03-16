@@ -1,0 +1,13 @@
+# Archivos temporales
+*.zip
+*.crx
+*.pem
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos de desarrollo
+*.log
+*.tmp
