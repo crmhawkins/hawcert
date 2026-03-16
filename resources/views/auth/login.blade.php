@@ -16,71 +16,108 @@
                 Sistema de Gestión de Certificados Electrónicos
             </p>
         </div>
-        {{-- Login clásico con usuario/contraseña --}}
-        <form class="mt-8 space-y-6" method="POST" action="{{ route('login') }}">
-            @csrf
-            <div class="rounded-md shadow-sm space-y-4">
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                    <input id="email" name="email" type="email" required 
-                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700"
-                           placeholder="tu@email.com" value="{{ old('email') }}">
-                </div>
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contraseña</label>
-                    <input id="password" name="password" type="password" required 
-                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700"
-                           placeholder="••••••••">
-                </div>
-            </div>
 
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <input id="remember" name="remember" type="checkbox" 
-                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                    <label for="remember" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                        Recordarme
-                    </label>
-                </div>
-            </div>
-
-            <div>
-                <button type="submit" 
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Iniciar sesión
-                </button>
-            </div>
-        </form>
-
-        {{-- Separador --}}
-        <div class="mt-8 flex items-center">
-            <div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
-            <span class="mx-3 text-xs uppercase text-gray-400">o</span>
-            <div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
-        </div>
-
-        {{-- Login con certificado --}}
-        <form class="mt-6 space-y-4" method="POST" action="{{ route('login.certificate') }}">
+        {{-- Login con certificado (método por defecto) --}}
+        <form class="mt-8 space-y-6" method="POST" action="{{ route('login.certificate') }}" enctype="multipart/form-data">
             @csrf
             <div>
-                <label for="certificate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Certificado (PEM)
+                <label for="certificate_file" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Certificado Electrónico
                 </label>
-                <textarea id="certificate" name="certificate" rows="6" required
-                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-xs font-mono"
-                          placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----">{{ old('certificate') }}</textarea>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Pega aquí el certificado X.509 emitido por HawCert para iniciar sesión con tu certificado.
+                <input id="certificate_file" name="certificate_file" type="file" required
+                       accept=".pem,.crt,.cer,.p12,.pfx"
+                       class="block w-full text-sm text-gray-500 dark:text-gray-400
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded-md file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-indigo-50 file:text-indigo-700
+                              hover:file:bg-indigo-100
+                              dark:file:bg-indigo-900 dark:file:text-indigo-200
+                              dark:hover:file:bg-indigo-800
+                              file:cursor-pointer
+                              border border-gray-300 dark:border-gray-600 rounded-md
+                              dark:bg-gray-700">
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Sube tu certificado X.509 emitido por HawCert (PEM, CRT, CER, P12, PFX)
                 </p>
+                @error('certificate_file')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                @enderror
             </div>
 
             <div>
                 <button type="submit"
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:text-indigo-200 dark:bg-indigo-900 dark:hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Iniciar sesión con certificado
                 </button>
             </div>
         </form>
+
+        {{-- Botón para mostrar login de administrador --}}
+        <div class="text-center">
+            <button type="button" id="toggleAdminLogin" 
+                    class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline">
+                Inicio de administrador
+            </button>
+        </div>
+
+        {{-- Login clásico con usuario/contraseña (oculto por defecto) --}}
+        <div id="adminLoginForm" class="hidden mt-6">
+            <div class="flex items-center mb-4">
+                <div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+                <span class="mx-3 text-xs uppercase text-gray-400">o</span>
+                <div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+            </div>
+            <form class="space-y-4" method="POST" action="{{ route('login') }}">
+                @csrf
+                <div class="rounded-md shadow-sm space-y-4">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                        <input id="email" name="email" type="email" required 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700"
+                               placeholder="tu@email.com" value="{{ old('email') }}">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contraseña</label>
+                        <input id="password" name="password" type="password" required 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700"
+                               placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember" name="remember" type="checkbox" 
+                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="remember" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                            Recordarme
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" 
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Iniciar sesión
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+
+    <script>
+        document.getElementById('toggleAdminLogin').addEventListener('click', function() {
+            const adminForm = document.getElementById('adminLoginForm');
+            const toggleButton = document.getElementById('toggleAdminLogin');
+            
+            if (adminForm.classList.contains('hidden')) {
+                adminForm.classList.remove('hidden');
+                toggleButton.textContent = 'Ocultar inicio de administrador';
+            } else {
+                adminForm.classList.add('hidden');
+                toggleButton.textContent = 'Inicio de administrador';
+            }
+        });
+    </script>
 </body>
 </html>
