@@ -16,6 +16,7 @@
                 Sistema de Gestión de Certificados Electrónicos
             </p>
         </div>
+        {{-- Login clásico con usuario/contraseña --}}
         <form class="mt-8 space-y-6" method="POST" action="{{ route('login') }}">
             @csrf
             <div class="rounded-md shadow-sm space-y-4">
@@ -47,6 +48,36 @@
                 <button type="submit" 
                         class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Iniciar sesión
+                </button>
+            </div>
+        </form>
+
+        {{-- Separador --}}
+        <div class="mt-8 flex items-center">
+            <div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+            <span class="mx-3 text-xs uppercase text-gray-400">o</span>
+            <div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+        </div>
+
+        {{-- Login con certificado --}}
+        <form class="mt-6 space-y-4" method="POST" action="{{ route('login.certificate') }}">
+            @csrf
+            <div>
+                <label for="certificate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Certificado (PEM)
+                </label>
+                <textarea id="certificate" name="certificate" rows="6" required
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-xs font-mono"
+                          placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----">{{ old('certificate') }}</textarea>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Pega aquí el certificado X.509 emitido por HawCert para iniciar sesión con tu certificado.
+                </p>
+            </div>
+
+            <div>
+                <button type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:text-indigo-200 dark:bg-indigo-900 dark:hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Iniciar sesión con certificado
                 </button>
             </div>
         </form>

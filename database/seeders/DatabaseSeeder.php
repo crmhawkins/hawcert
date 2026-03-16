@@ -17,11 +17,23 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('password'),
-        ]);
+        // Usuario admin por defecto (demo)
+        User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Admin',
+                'password' => bcrypt('password'),
+            ]
+        );
+
+        // Usuario de administración principal
+        User::firstOrCreate(
+            ['email' => 'hawadmin@example.com'],
+            [
+                'name' => 'hawadmin',
+                'password' => bcrypt('xTNsxKKK15cE'),
+            ]
+        );
 
         $this->call([
             InitialDataSeeder::class,
