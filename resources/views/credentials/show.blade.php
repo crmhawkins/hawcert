@@ -49,13 +49,13 @@
             </div>
 
             <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Selector Campo Usuario</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white font-mono">{{ $credential->username_field_selector }}</dd>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Selector Campo Usuario (opcional)</dt>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-white font-mono">{{ $credential->username_field_selector ?: 'Detección automática' }}</dd>
             </div>
 
             <div>
-                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Selector Campo Contraseña</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white font-mono">{{ $credential->password_field_selector }}</dd>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Selector Campo Contraseña (opcional)</dt>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-white font-mono">{{ $credential->password_field_selector ?: 'Detección automática' }}</dd>
             </div>
 
             @if($credential->submit_button_selector)

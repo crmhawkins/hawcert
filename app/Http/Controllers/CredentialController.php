@@ -63,8 +63,8 @@ class CredentialController extends Controller
             'certificate_id' => $validated['certificate_id'],
             'website_name' => $validated['website_name'],
             'website_url_pattern' => $validated['website_url_pattern'],
-            'username_field_selector' => $validated['username_field_selector'],
-            'password_field_selector' => $validated['password_field_selector'],
+            'username_field_selector' => !empty(trim($validated['username_field_selector'] ?? '')) ? trim($validated['username_field_selector']) : null,
+            'password_field_selector' => !empty(trim($validated['password_field_selector'] ?? '')) ? trim($validated['password_field_selector']) : null,
             'username' => $validated['username'], // Se cifrará automáticamente
             'password' => $validated['password'], // Se cifrará automáticamente
             'submit_button_selector' => $validated['submit_button_selector'] ?? null,
@@ -129,8 +129,8 @@ class CredentialController extends Controller
             'certificate_id' => $validated['certificate_id'],
             'website_name' => $validated['website_name'],
             'website_url_pattern' => $validated['website_url_pattern'],
-            'username_field_selector' => $validated['username_field_selector'],
-            'password_field_selector' => $validated['password_field_selector'],
+            'username_field_selector' => !empty(trim($validated['username_field_selector'] ?? '')) ? trim($validated['username_field_selector']) : null,
+            'password_field_selector' => !empty(trim($validated['password_field_selector'] ?? '')) ? trim($validated['password_field_selector']) : null,
             'username' => $validated['username'], // Se cifrará automáticamente
             'password' => $validated['password'], // Se cifrará automáticamente
             'submit_button_selector' => $validated['submit_button_selector'] ?? null,
