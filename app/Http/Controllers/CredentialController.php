@@ -53,11 +53,6 @@ class CredentialController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // Validar que al menos user_id o certificate_id esté presente
-        if (!$validated['user_id'] && !$validated['certificate_id']) {
-            return back()->withErrors(['user_id' => 'Debe seleccionar un usuario o un certificado.'])->withInput();
-        }
-
         $credential = Credential::create([
             'user_id' => $validated['user_id'],
             'certificate_id' => $validated['certificate_id'],
@@ -118,11 +113,6 @@ class CredentialController extends Controller
             'is_active' => 'boolean',
             'notes' => 'nullable|string',
         ]);
-
-        // Validar que al menos user_id o certificate_id esté presente
-        if (!$validated['user_id'] && !$validated['certificate_id']) {
-            return back()->withErrors(['user_id' => 'Debe seleccionar un usuario o un certificado.'])->withInput();
-        }
 
         $credential->update([
             'user_id' => $validated['user_id'],

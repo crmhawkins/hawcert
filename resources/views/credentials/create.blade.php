@@ -39,7 +39,7 @@
                         <option value="{{ $certificate->id }}" {{ old('certificate_id') == $certificate->id ? 'selected' : '' }}>{{ $certificate->name }}</option>
                     @endforeach
                 </select>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Debe seleccionar al menos un usuario o certificado</p>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Si deja ambos en Ninguno, la credencial será general para cualquier certificado</p>
             </div>
 
             <div>

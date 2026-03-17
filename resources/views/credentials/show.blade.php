@@ -30,12 +30,12 @@
 
             <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuario Asociado</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $credential->user->name ?? 'Ninguno' }}</dd>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $credential->user?->name ?? ($credential->user_id ? 'Ninguno' : '—') }}</dd>
             </div>
 
             <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Certificado Asociado</dt>
-                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $credential->certificate->name ?? 'Ninguno' }}</dd>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $credential->certificate?->name ?? ($credential->certificate_id ? 'Ninguno' : ($credential->user_id ? '—' : 'General (cualquier certificado)')) }}</dd>
             </div>
 
             <div>

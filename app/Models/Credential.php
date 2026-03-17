@@ -15,8 +15,8 @@ class Credential extends Model
         'website_url_pattern',
         'username_field_selector',
         'password_field_selector',
-        'username_value',
-        'password_value',
+        'username',
+        'password',
         'submit_button_selector',
         'auto_fill',
         'auto_submit',
@@ -109,28 +109,43 @@ class Credential extends Model
     }
 
     /**
-     * Obtener credenciales para una URL y certificado/usuario
+     * Obtener credenciales para una URL y certificado/usuario.
+     * Incluye credenciales "generales" (sin usuario ni certificado), que aplican a cualquier certificado.
+     * Prioridad: credencial específica (usuario/certificado) > credencial general.
      */
     public static function getForUrl(string $url, ?int $userId = null, ?int $certificateId = null): ?self
     {
-        $query = self::where('is_active', true)
+        $candidates = self::where('is_active', true)
             ->where(function ($q) use ($userId, $certificateId) {
+                $q->where(function ($q2) {
+                    $q2->whereNull('user_id')->whereNull('certificate_id');
+                });
                 if ($userId) {
-                    $q->where('user_id', $userId);
+                    $q->orWhere('user_id', $userId);
                 }
                 if ($certificateId) {
                     $q->orWhere('certificate_id', $certificateId);
                 }
-            });
+            })
+            ->get()
+            ->filter(fn ($c) => $c->matchesUrl($url));
 
-        $credentials = $query->get();
-        
-        foreach ($credentials as $credential) {
-            if ($credential->matchesUrl($url)) {
-                return $credential;
-            }
+        if ($candidates->isEmpty()) {
+            return null;
         }
 
-        return null;
+        // Priorizar: específica (certificado o usuario) antes que general
+        $sorted = $candidates->sortByDesc(function ($c) use ($userId, $certificateId) {
+            $score = 0;
+            if ($certificateId && $c->certificate_id == $certificateId) {
+                $score += 2;
+            }
+            if ($userId && $c->user_id == $userId) {
+                $score += 1;
+            }
+            return $score;
+        });
+
+        return $sorted->first();
     }
 }

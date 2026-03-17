@@ -34,10 +34,10 @@
                         {{ Str::limit($credential->website_url_pattern, 40) }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {{ $credential->user->name ?? '-' }}
+                        {{ $credential->user?->name ?? ($credential->user_id ? '—' : 'General') }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {{ $credential->certificate->name ?? '-' }}
+                        {{ $credential->certificate?->name ?? ($credential->certificate_id ? '—' : ($credential->user_id ? '—' : 'General')) }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         @if($credential->auto_fill)
