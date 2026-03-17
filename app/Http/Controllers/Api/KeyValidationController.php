@@ -144,6 +144,8 @@ class KeyValidationController extends Controller
                 'used_at' => $accessKey->used_at,
             ]);
 
+            $loginIdentifier = $accessKey->certificate->getAuthUsernameForService($accessKey->service_slug ?? '');
+
             return response()->json([
                 'success' => true,
                 'valid' => true,
@@ -151,12 +153,12 @@ class KeyValidationController extends Controller
                     'id' => $accessKey->certificate->id,
                     'name' => $accessKey->certificate->name,
                     'common_name' => $accessKey->certificate->common_name,
-                    'email' => $accessKey->certificate->email, // Email del certificado
+                    'email' => $loginIdentifier, // Valor a usar: auth_username del servicio si existe, si no email del certificado
                 ],
                 'user' => [
                     'id' => $accessKey->certificate->user->id,
                     'name' => $accessKey->certificate->user->name,
-                    'email' => $accessKey->certificate->email, // Email del certificado, no del usuario
+                    'email' => $loginIdentifier, // Valor a enviar para autenticación en el sistema/servicio
                 ],
                 'service' => [
                     'slug' => $accessKey->service_slug,

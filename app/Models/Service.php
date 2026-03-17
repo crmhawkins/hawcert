@@ -21,6 +21,6 @@ class Service extends Model
 
     public function certificates(): BelongsToMany
     {
-        return $this->belongsToMany(Certificate::class);
+        return $this->belongsToMany(Certificate::class)->withPivot('auth_username');
     }
 }

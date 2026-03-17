@@ -88,26 +88,35 @@ class CredentialApiController extends Controller
                 ], 404);
             }
 
+            $isCertificateOnly = $credential->isCertificateOnly();
+
             Log::info('✅ Credenciales obtenidas exitosamente', [
                 'credential_id' => $credential->id,
                 'website_name' => $credential->website_name,
+                'certificate_only' => $isCertificateOnly,
                 'url' => $currentUrl,
                 'certificate_id' => $certificate->id,
             ]);
 
+            $payload = [
+                'id' => $credential->id,
+                'website_name' => $credential->website_name,
+                'certificate_only' => $isCertificateOnly,
+            ];
+
+            if (!$isCertificateOnly) {
+                $payload['username_field_selector'] = $credential->username_field_selector;
+                $payload['password_field_selector'] = $credential->password_field_selector;
+                $payload['submit_button_selector'] = $credential->submit_button_selector;
+                $payload['username'] = $credential->username;
+                $payload['password'] = $credential->password;
+                $payload['auto_fill'] = $credential->auto_fill;
+                $payload['auto_submit'] = true;
+            }
+
             return response()->json([
                 'success' => true,
-                'credential' => [
-                    'id' => $credential->id,
-                    'website_name' => $credential->website_name,
-                    'username_field_selector' => $credential->username_field_selector,
-                    'password_field_selector' => $credential->password_field_selector,
-                    'submit_button_selector' => $credential->submit_button_selector,
-                    'username' => $credential->username, // Descifrado automáticamente por el modelo
-                    'password' => $credential->password, // Descifrado automáticamente por el modelo
-                    'auto_fill' => $credential->auto_fill,
-                    'auto_submit' => true, // Siempre enviar automáticamente
-                ],
+                'credential' => $payload,
             ], 200);
 
         } catch (\Exception $e) {

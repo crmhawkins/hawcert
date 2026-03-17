@@ -257,16 +257,28 @@
 
   /**
    * Rellena los campos con las credenciales. Soporta:
+   * - Solo certificado (sin formulario) → mostrar notificación para elegir certificado cuando el navegador lo pida
    * - Usuario + contraseña en la misma página → rellenar ambos y enviar
    * - Solo usuario (página de "siguiente") → rellenar usuario y pulsar Siguiente
    * - Solo contraseña (segunda página) → rellenar contraseña y enviar
-   * @returns {Promise<boolean>} true si se rellenó al menos un campo
+   * @returns {Promise<boolean>} true si se rellenó al menos un campo o se mostró aviso de solo certificado
    */
   async function fillCredentials(credential) {
     if (isFilling) return false;
     isFilling = true;
 
     try {
+      if (credential.certificate_only) {
+        log('Página con autenticación solo por certificado:', credential.website_name);
+        if (chrome.runtime?.sendMessage) {
+          chrome.runtime.sendMessage({
+            action: 'showCertificateOnlyNotification',
+            websiteName: credential.website_name || 'Esta página',
+          });
+        }
+        return true;
+      }
+
       let usernameField = null;
       let passwordField = null;
 

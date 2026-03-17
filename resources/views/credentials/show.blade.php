@@ -39,6 +39,18 @@
             </div>
 
             <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo de autenticación</dt>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-white">
+                    @if(($credential->auth_type ?? 'form') === 'certificate_only')
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">Solo certificado</span>
+                    @else
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">Formulario (usuario y contraseña)</span>
+                    @endif
+                </dd>
+            </div>
+
+            @if(($credential->auth_type ?? 'form') === 'form')
+            <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuario</dt>
                 <dd class="mt-1 text-sm text-gray-900 dark:text-white font-mono">{{ $credential->username }}</dd>
             </div>
@@ -47,6 +59,7 @@
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Contraseña</dt>
                 <dd class="mt-1 text-sm text-gray-900 dark:text-white font-mono">••••••••</dd>
             </div>
+            @endif
 
             <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Selector Campo Usuario (opcional)</dt>

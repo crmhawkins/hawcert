@@ -41,9 +41,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  // Si no se maneja el mensaje, devolver false
+  if (request.action === 'showCertificateOnlyNotification') {
+    showCertificateOnlyNotification(request.websiteName || 'Esta página');
+    sendResponse({ ok: true });
+    return true;
+  }
+
   return false;
 });
+
+function showCertificateOnlyNotification(websiteName) {
+  chrome.notifications.create({
+    type: 'basic',
+    title: 'HawCert – Solo certificado',
+    message: `${websiteName} usa solo certificado. Si el navegador pide un certificado, elige tu certificado HawCert y marca "Recordar" para que se use automáticamente.`,
+    priority: 1,
+    requireInteraction: false,
+  });
+}
 
 /**
  * Obtiene credenciales desde la API de HawCert

@@ -23,6 +23,7 @@ class Certificate extends Model
         'valid_until',
         'never_expires',
         'is_active',
+        'is_becario',
         'metadata',
     ];
 
@@ -31,6 +32,7 @@ class Certificate extends Model
         'valid_until' => 'datetime',
         'never_expires' => 'boolean',
         'is_active' => 'boolean',
+        'is_becario' => 'boolean',
         'metadata' => 'array',
     ];
 
@@ -41,7 +43,22 @@ class Certificate extends Model
 
     public function services(): BelongsToMany
     {
-        return $this->belongsToMany(Service::class);
+        return $this->belongsToMany(Service::class)->withPivot('auth_username');
+    }
+
+    /**
+     * Obtiene el usuario de autenticación para un servicio.
+     * Si en la asignación del servicio se definió auth_username, se devuelve ese valor;
+     * si no, el email del certificado (dueño).
+     */
+    public function getAuthUsernameForService(string $serviceSlug): string
+    {
+        $service = $this->services()->where('slug', $serviceSlug)->first();
+        if (!$service || !$service->pivot) {
+            return $this->email ?? '';
+        }
+        $authUsername = trim((string) ($service->pivot->auth_username ?? ''));
+        return $authUsername !== '' ? $authUsername : ($this->email ?? '');
     }
 
     public function permissions(): BelongsToMany

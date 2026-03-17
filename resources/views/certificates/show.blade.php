@@ -5,7 +5,12 @@
 @section('content')
     <div class="px-4 sm:px-0">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Certificado: {{ $certificate->name }}</h1>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                Certificado: {{ $certificate->name }}
+                @if($certificate->is_becario ?? false)
+                    <span class="ml-2 px-2 inline-flex text-sm leading-6 font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100">Becario</span>
+                @endif
+            </h1>
         <div class="space-x-3">
             @if($certificate->x509_certificate)
             <div class="inline-flex rounded-md shadow-sm" role="group">
@@ -133,13 +138,18 @@
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Servicios</dt>
                 <dd class="mt-1">
                     @if($certificate->services->count() > 0)
-                        <div class="flex flex-wrap gap-2">
+                        <ul class="space-y-1">
                             @foreach($certificate->services as $service)
-                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
-                                    {{ $service->name }}
-                                </span>
+                                <li class="flex items-center gap-2 flex-wrap">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">{{ $service->name }}</span>
+                                    @if(!empty($service->pivot->auth_username))
+                                        <span class="text-xs text-gray-600 dark:text-gray-400">Usuario de acceso: <span class="font-mono">{{ $service->pivot->auth_username }}</span></span>
+                                    @else
+                                        <span class="text-xs text-gray-500 dark:text-gray-500">Usuario: email del certificado</span>
+                                    @endif
+                                </li>
                             @endforeach
-                        </div>
+                        </ul>
                     @else
                         <span class="text-sm text-gray-500 dark:text-gray-400">No hay servicios asignados</span>
                     @endif

@@ -80,9 +80,11 @@ class CertificateValidationController extends Controller
             'permissions' => $certificate->permissions->pluck('slug')->toArray(),
         ], $expiresAt);
 
+        $loginIdentifier = $certificate->getAuthUsernameForService($serviceSlug);
+
         Log::info('✅ Certificado validado exitosamente', [
             'user_id' => $certificate->user_id,
-            'user_email' => $certificate->email,
+            'login_identifier' => $loginIdentifier,
             'access_token' => substr($accessToken, 0, 20) . '...',
         ]);
 
@@ -93,7 +95,7 @@ class CertificateValidationController extends Controller
             'user' => [
                 'id' => $certificate->user->id,
                 'name' => $certificate->user->name,
-                'email' => $certificate->email, // Email del certificado, no del usuario
+                'email' => $loginIdentifier, // Valor a usar para autenticación: auth_username del servicio si existe, si no el email del certificado
             ],
             'permissions' => $certificate->permissions->pluck('slug')->toArray(),
             'certificate' => [

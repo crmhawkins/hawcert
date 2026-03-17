@@ -59,6 +59,14 @@
 
             <div class="sm:col-span-2">
                 <label class="flex items-center">
+                    <input type="checkbox" name="is_becario" id="is_becario" value="1" {{ old('is_becario') ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Becario</span>
+                </label>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Los certificados Becario se muestran en otro color y deben tener siempre fecha de expiración. Se puede desactivar editando el certificado.</p>
+            </div>
+
+            <div class="sm:col-span-2">
+                <label class="flex items-center">
                     <input type="checkbox" name="never_expires" id="never_expires" value="1" {{ old('never_expires') ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Este certificado nunca expira</span>
                 </label>
@@ -66,12 +74,16 @@
 
             <div class="sm:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Servicios</label>
-                <div class="grid grid-cols-2 gap-2">
+                <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Por defecto se usará el email del certificado para autenticarse en cada servicio. Opcionalmente puede indicar un usuario concreto (ej: user1921) que se enviará en lugar del email.</p>
+                <div class="space-y-3">
                     @foreach($services as $service)
-                        <label class="flex items-center">
-                            <input type="checkbox" name="services[]" value="{{ $service->id }}" {{ in_array($service->id, old('services', [])) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ $service->name }}</span>
-                        </label>
+                        <div class="flex flex-wrap items-center gap-2 p-2 rounded border border-gray-200 dark:border-gray-600">
+                            <label class="flex items-center shrink-0">
+                                <input type="checkbox" name="services[]" value="{{ $service->id }}" {{ in_array($service->id, old('services', [])) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{{ $service->name }}</span>
+                            </label>
+                            <input type="text" name="service_auth_username[{{ $service->id }}]" value="{{ old('service_auth_username.'.$service->id) }}" placeholder="Usuario opcional (si no, se usa el email)" class="flex-1 min-w-[180px] text-sm rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -104,22 +116,43 @@
 document.addEventListener('DOMContentLoaded', function() {
     const neverExpiresCheckbox = document.getElementById('never_expires');
     const validUntilInput = document.getElementById('valid_until');
-    
-    neverExpiresCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            validUntilInput.disabled = true;
-            validUntilInput.removeAttribute('required');
-        } else {
+    const isBecarioCheckbox = document.getElementById('is_becario');
+
+    function updateValidUntilState() {
+        const becario = isBecarioCheckbox && isBecarioCheckbox.checked;
+        if (becario) {
+            neverExpiresCheckbox.checked = false;
+            neverExpiresCheckbox.disabled = true;
             validUntilInput.disabled = false;
-            validUntilInput.setAttribute('required', 'required');
+            validUntilInput.required = true;
+        } else {
+            neverExpiresCheckbox.disabled = false;
+            if (neverExpiresCheckbox.checked) {
+                validUntilInput.disabled = true;
+                validUntilInput.removeAttribute('required');
+            } else {
+                validUntilInput.disabled = false;
+                validUntilInput.removeAttribute('required');
+            }
         }
-    });
-    
-    // Inicializar estado
-    if (neverExpiresCheckbox.checked) {
-        validUntilInput.disabled = true;
-        validUntilInput.removeAttribute('required');
     }
+
+    if (neverExpiresCheckbox) {
+        neverExpiresCheckbox.addEventListener('change', function() {
+            if (isBecarioCheckbox && isBecarioCheckbox.checked) return;
+            if (this.checked) {
+                validUntilInput.disabled = true;
+                validUntilInput.removeAttribute('required');
+            } else {
+                validUntilInput.disabled = false;
+                validUntilInput.setAttribute('required', 'required');
+            }
+        });
+    }
+    if (isBecarioCheckbox) {
+        isBecarioCheckbox.addEventListener('change', updateValidUntilState);
+    }
+    updateValidUntilState();
 });
 </script>
 @endsection

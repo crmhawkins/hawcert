@@ -22,6 +22,20 @@
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Usa * como comodín (ej: *ionos.com*)</p>
             </div>
 
+            <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de autenticación</label>
+                <div class="mt-2 space-x-4 flex flex-wrap">
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="auth_type" value="form" {{ old('auth_type', $credential->auth_type ?? 'form') === 'form' ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Formulario (usuario y contraseña)</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="auth_type" value="certificate_only" {{ old('auth_type', $credential->auth_type ?? 'form') === 'certificate_only' ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Solo certificado (sin formulario)</span>
+                    </label>
+                </div>
+            </div>
+
             <div>
                 <label for="user_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Usuario (opcional)</label>
                 <select name="user_id" id="user_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
@@ -57,12 +71,14 @@
 
             <div>
                 <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Usuario</label>
-                <input type="text" name="username" id="username" required value="{{ old('username', $credential->username) }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <input type="text" name="username" id="username" value="{{ old('username', $credential->username) }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Obligatorio si el tipo es formulario</p>
             </div>
 
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contraseña</label>
-                <input type="password" name="password" id="password" required value="{{ old('password', $credential->password) }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <input type="password" name="password" id="password" value="{{ old('password', $credential->password) }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Obligatoria si el tipo es formulario (dejar en blanco para no cambiar)</p>
             </div>
 
             <div>

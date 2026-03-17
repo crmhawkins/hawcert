@@ -44,13 +44,26 @@ class CertificateController extends Controller
             'organizational_unit' => 'nullable|string|max:255',
             'services' => 'nullable|array',
             'services.*' => 'exists:services,id',
+            'service_auth_username' => 'nullable|array',
+            'service_auth_username.*' => 'nullable|string|max:255',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
+            'is_becario' => 'boolean',
         ]);
+
+        $isBecario = (bool) ($validated['is_becario'] ?? false);
+        if ($isBecario) {
+            $request->validate([
+                'valid_until' => 'required|date|after:valid_from',
+            ], [
+                'valid_until.required' => 'Los certificados de tipo Becario deben tener fecha de expiración obligatoria.',
+            ]);
+        }
 
         $user = \App\Models\User::find($validated['user_id']);
         $validFrom = $validated['valid_from'] ? \Carbon\Carbon::parse($validated['valid_from']) : now();
-        $validUntil = ($validated['never_expires'] ?? false) ? null : ($validated['valid_until'] ? \Carbon\Carbon::parse($validated['valid_until']) : null);
+        $neverExpires = $isBecario ? false : ($validated['never_expires'] ?? false);
+        $validUntil = $neverExpires ? null : ($validated['valid_until'] ? \Carbon\Carbon::parse($validated['valid_until']) : null);
 
         // Generar certificado X.509 real
         $certGenerator = new CertificateGeneratorService();
@@ -62,7 +75,7 @@ class CertificateController extends Controller
             'organizational_unit' => $validated['organizational_unit'] ?? null,
             'valid_from' => $validFrom,
             'valid_until' => $validUntil,
-            'never_expires' => $validated['never_expires'] ?? false,
+            'never_expires' => $neverExpires,
         ]);
 
         $certificate = Certificate::create([
@@ -78,12 +91,20 @@ class CertificateController extends Controller
             'description' => $validated['description'] ?? null,
             'valid_from' => $validFrom,
             'valid_until' => $validUntil,
-            'never_expires' => $validated['never_expires'] ?? false,
+            'never_expires' => $neverExpires,
             'is_active' => true,
+            'is_becario' => $isBecario,
         ]);
 
         if (isset($validated['services'])) {
-            $certificate->services()->attach($validated['services']);
+            $syncData = [];
+            foreach ($validated['services'] as $serviceId) {
+                $authUsername = isset($validated['service_auth_username'][$serviceId])
+                    ? trim((string) $validated['service_auth_username'][$serviceId])
+                    : '';
+                $syncData[$serviceId] = ['auth_username' => $authUsername !== '' ? $authUsername : null];
+            }
+            $certificate->services()->sync($syncData);
         }
 
         if (isset($validated['permissions'])) {
@@ -124,13 +145,29 @@ class CertificateController extends Controller
             'organizational_unit' => 'nullable|string|max:255',
             'services' => 'nullable|array',
             'services.*' => 'exists:services,id',
+            'service_auth_username' => 'nullable|array',
+            'service_auth_username.*' => 'nullable|string|max:255',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
+            'is_becario' => 'boolean',
         ]);
 
+        $isBecario = (bool) ($validated['is_becario'] ?? false);
+        if ($isBecario) {
+            $request->validate([
+                'valid_until' => 'required|date|after:valid_from',
+            ], [
+                'valid_until.required' => 'Los certificados de tipo Becario deben tener fecha de expiración obligatoria.',
+            ]);
+        }
+
         $validFrom = $validated['valid_from'] ?? $certificate->valid_from;
-        $validUntil = ($validated['never_expires'] ?? false) ? null : ($validated['valid_until'] ?? $certificate->valid_until);
-        
+        $neverExpires = $isBecario ? false : ($validated['never_expires'] ?? false);
+        $validUntil = $neverExpires ? null : ($validated['valid_until'] ?? $certificate->valid_until);
+        if ($validUntil && !$validUntil instanceof \Carbon\Carbon) {
+            $validUntil = \Carbon\Carbon::parse($validUntil);
+        }
+
         // Verificar si hay cambios que requieren regenerar el certificado X.509
         $needsRegeneration = $certificate->x509_certificate && (
             $certificate->name !== $validated['name'] ||
@@ -139,11 +176,10 @@ class CertificateController extends Controller
             ($certificate->organizational_unit ?? '') !== ($validated['organizational_unit'] ?? '') ||
             $certificate->valid_from->format('Y-m-d H:i:s') !== ($validFrom instanceof \Carbon\Carbon ? $validFrom->format('Y-m-d H:i:s') : $validFrom) ||
             ($certificate->valid_until ? $certificate->valid_until->format('Y-m-d H:i:s') : null) !== ($validUntil ? ($validUntil instanceof \Carbon\Carbon ? $validUntil->format('Y-m-d H:i:s') : $validUntil) : null) ||
-            $certificate->never_expires !== ($validated['never_expires'] ?? false)
+            $certificate->never_expires !== $neverExpires
         );
 
         if ($needsRegeneration) {
-            // Regenerar certificado X.509 con los nuevos datos
             $certGenerator = new CertificateGeneratorService();
             $certData = $certGenerator->generateX509Certificate([
                 'name' => $validated['name'],
@@ -153,7 +189,7 @@ class CertificateController extends Controller
                 'organizational_unit' => $validated['organizational_unit'] ?? null,
                 'valid_from' => $validFrom instanceof \Carbon\Carbon ? $validFrom : \Carbon\Carbon::parse($validFrom),
                 'valid_until' => $validUntil ? ($validUntil instanceof \Carbon\Carbon ? $validUntil : \Carbon\Carbon::parse($validUntil)) : null,
-                'never_expires' => $validated['never_expires'] ?? false,
+                'never_expires' => $neverExpires,
             ]);
 
             $certificate->update([
@@ -168,8 +204,9 @@ class CertificateController extends Controller
                 'description' => $validated['description'] ?? null,
                 'valid_from' => $validFrom instanceof \Carbon\Carbon ? $validFrom : \Carbon\Carbon::parse($validFrom),
                 'valid_until' => $validUntil,
-                'never_expires' => $validated['never_expires'] ?? false,
+                'never_expires' => $neverExpires,
                 'is_active' => $validated['is_active'] ?? $certificate->is_active,
+                'is_becario' => $isBecario,
             ]);
         } else {
             $certificate->update([
@@ -179,13 +216,21 @@ class CertificateController extends Controller
                 'description' => $validated['description'] ?? null,
                 'valid_from' => $validFrom instanceof \Carbon\Carbon ? $validFrom : \Carbon\Carbon::parse($validFrom),
                 'valid_until' => $validUntil,
-                'never_expires' => $validated['never_expires'] ?? false,
+                'never_expires' => $neverExpires,
                 'is_active' => $validated['is_active'] ?? $certificate->is_active,
+                'is_becario' => $isBecario,
             ]);
         }
 
         if (isset($validated['services'])) {
-            $certificate->services()->sync($validated['services']);
+            $syncData = [];
+            foreach ($validated['services'] as $serviceId) {
+                $authUsername = isset($validated['service_auth_username'][$serviceId])
+                    ? trim((string) $validated['service_auth_username'][$serviceId])
+                    : '';
+                $syncData[$serviceId] = ['auth_username' => $authUsername !== '' ? $authUsername : null];
+            }
+            $certificate->services()->sync($syncData);
         } else {
             $certificate->services()->detach();
         }

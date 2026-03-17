@@ -8,11 +8,15 @@ use Illuminate\Support\Facades\Crypt;
 
 class Credential extends Model
 {
+    public const AUTH_TYPE_FORM = 'form';
+    public const AUTH_TYPE_CERTIFICATE_ONLY = 'certificate_only';
+
     protected $fillable = [
         'user_id',
         'certificate_id',
         'website_name',
         'website_url_pattern',
+        'auth_type',
         'username_field_selector',
         'password_field_selector',
         'username',
@@ -56,6 +60,9 @@ class Credential extends Model
      */
     public function getUsernameAttribute(): string
     {
+        if ($this->username_value === null || $this->username_value === '') {
+            return '';
+        }
         try {
             return Crypt::decryptString($this->username_value);
         } catch (\Exception $e) {
@@ -68,6 +75,9 @@ class Credential extends Model
      */
     public function getPasswordAttribute(): string
     {
+        if ($this->password_value === null || $this->password_value === '') {
+            return '';
+        }
         try {
             return Crypt::decryptString($this->password_value);
         } catch (\Exception $e) {
@@ -80,6 +90,10 @@ class Credential extends Model
      */
     public function setUsernameAttribute($value): void
     {
+        if ($value === null || $value === '') {
+            $this->attributes['username_value'] = null;
+            return;
+        }
         $this->attributes['username_value'] = Crypt::encryptString($value);
     }
 
@@ -88,7 +102,16 @@ class Credential extends Model
      */
     public function setPasswordAttribute($value): void
     {
+        if ($value === null || $value === '') {
+            $this->attributes['password_value'] = null;
+            return;
+        }
         $this->attributes['password_value'] = Crypt::encryptString($value);
+    }
+
+    public function isCertificateOnly(): bool
+    {
+        return $this->auth_type === self::AUTH_TYPE_CERTIFICATE_ONLY;
     }
 
     /**
