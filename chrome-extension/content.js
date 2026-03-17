@@ -3,6 +3,18 @@
 (function() {
   'use strict';
 
+  const DEBUG = true; // Cambiar a false para reducir logs en consola (F12 > Console)
+
+  function log(...args) {
+    if (DEBUG) {
+      console.log('[HawCert]', ...args);
+    }
+  }
+
+  function logError(...args) {
+    console.error('[HawCert]', ...args);
+  }
+
   let isFilling = false;
   let currentUrl = window.location.href;
   let filledFields = new Set(); // Para evitar rellenar múltiples veces
@@ -41,9 +53,15 @@
     'input.passwd',
   ];
 
-  // Patrones de texto para botones de envío (usados en findSubmitButton)
+  // Patrones de texto para botones de envío / login
   const SUBMIT_TEXT_PATTERNS = [
     'Iniciar', 'Login', 'Entrar', 'Sign in', 'Log in', 'Iniciar sesión', 'Acceder'
+  ];
+
+  // Patrones para botón "Siguiente" (cuando usuario y contraseña están en páginas separadas)
+  const NEXT_BUTTON_PATTERNS = [
+    'Siguiente', 'Next', 'Continuar', 'Continue', 'Weiter', 'Suivant', 'Avanti',
+    'Siguiente paso', 'Next step', 'Continuar con', 'Continue with'
   ];
 
   // Detectar cuando la página cambia (SPA)
@@ -85,31 +103,27 @@
    * Verifica si hay credenciales para esta URL y las rellena
    */
   async function checkAndFill() {
-    if (isFilling) return;
+    if (isFilling) return false;
+
+    log('checkAndFill iniciado', { url: currentUrl });
 
     try {
-      // Verificar que la extensión esté disponible
       if (!chrome.runtime || !chrome.runtime.sendMessage) {
-        console.debug('HawCert: Runtime no disponible');
-        return;
+        log('Runtime no disponible');
+        return false;
       }
 
       const response = await new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(
-          {
-            action: 'getCredentials',
-            url: currentUrl,
-          },
+          { action: 'getCredentials', url: currentUrl },
           (response) => {
-            // Verificar errores de Chrome
             if (chrome.runtime.lastError) {
-              // El service worker puede no estar activo, esto es normal
-              if (chrome.runtime.lastError.message.includes('Receiving end does not exist') ||
-                  chrome.runtime.lastError.message.includes('message port closed')) {
+              const msg = chrome.runtime.lastError.message;
+              if (msg.includes('Receiving end does not exist') || msg.includes('message port closed')) {
                 reject(new Error('Service worker no disponible'));
                 return;
               }
-              reject(new Error(chrome.runtime.lastError.message));
+              reject(new Error(msg));
               return;
             }
             resolve(response);
@@ -117,23 +131,32 @@
         );
       });
 
-      if (response && response.success && response.credentials) {
-        await fillCredentials(response.credentials);
+      if (!response) {
+        log('Respuesta vacía del backend');
+        return false;
       }
+      if (!response.success) {
+        log('Backend devolvió success=false', response.message || response);
+        return false;
+      }
+      if (!response.credentials) {
+        log('No hay credenciales en la respuesta', response);
+        return false;
+      }
+
+      log('Credenciales recibidas para', response.credentials.website_name);
+      return await fillCredentials(response.credentials);
     } catch (error) {
-      // Silenciar errores comunes (service worker inactivo, no hay credenciales, etc.)
       if (error.message && (
         error.message.includes('Service worker no disponible') ||
         error.message.includes('Receiving end does not exist') ||
         error.message.includes('message port closed')
       )) {
-        // El service worker se activará cuando sea necesario, reintentar después de un delay
-        setTimeout(() => {
-          checkAndFill();
-        }, 1000);
-        return;
+        setTimeout(() => checkAndFill(), 1000);
+        return false;
       }
-      console.debug('HawCert: No se encontraron credenciales para esta URL', error.message);
+      logError('Error en checkAndFill', error.message, error);
+      return false;
     }
   }
 
@@ -163,10 +186,9 @@
   }
 
   /**
-   * Busca el botón de envío del formulario
+   * Busca el botón de envío / login del formulario
    */
   function findSubmitButton(form) {
-    // Buscar por selectores CSS
     const cssSelectors = [
       'button[type="submit"]',
       'input[type="submit"]',
@@ -187,12 +209,9 @@
       }
     }
 
-    // Buscar por texto en botones
-    const buttons = form.querySelectorAll('button, input[type="button"], [role="button"]');
-
+    const buttons = form.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]');
     for (const button of buttons) {
       if (button.offsetParent === null || button.disabled) continue;
-
       const text = (button.textContent || button.value || button.getAttribute('aria-label') || '').toLowerCase();
       for (const pattern of SUBMIT_TEXT_PATTERNS) {
         if (text.includes(pattern.toLowerCase())) {
@@ -200,181 +219,201 @@
         }
       }
     }
-
     return null;
   }
 
   /**
-   * Rellena los campos con las credenciales de forma invisible
+   * Busca el botón "Siguiente" / "Next" (para flujo usuario → siguiente → página de contraseña)
+   */
+  function findNextButton(form) {
+    const buttons = form.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"], a[role="button"], a.btn');
+    for (const button of buttons) {
+      if (button.offsetParent === null || button.disabled) continue;
+      const text = (button.textContent || button.value || button.getAttribute('aria-label') || '').trim().toLowerCase();
+      for (const pattern of NEXT_BUTTON_PATTERNS) {
+        if (text.includes(pattern.toLowerCase())) {
+          return button;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Rellena un campo y dispara eventos para que el sitio detecte el cambio
+   */
+  function fillFieldAndTrigger(field, value, label) {
+    if (!field || value == null) return;
+    field.focus();
+    field.value = value;
+    filledFields.add(field);
+    const events = ['input', 'change', 'keyup', 'keydown', 'focus', 'blur'];
+    events.forEach(eventType => {
+      field.dispatchEvent(new Event(eventType, { bubbles: true, cancelable: true }));
+    });
+    field.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true }));
+    log(label, 'rellenado, valor length=', value.length);
+  }
+
+  /**
+   * Rellena los campos con las credenciales. Soporta:
+   * - Usuario + contraseña en la misma página → rellenar ambos y enviar
+   * - Solo usuario (página de "siguiente") → rellenar usuario y pulsar Siguiente
+   * - Solo contraseña (segunda página) → rellenar contraseña y enviar
+   * @returns {Promise<boolean>} true si se rellenó al menos un campo
    */
   async function fillCredentials(credential) {
-    if (isFilling) return;
+    if (isFilling) return false;
     isFilling = true;
 
     try {
-      let usernameField, passwordField;
+      let usernameField = null;
+      let passwordField = null;
 
-      // Si hay selectores específicos configurados, usarlos primero
       if (credential.username_field_selector) {
         usernameField = document.querySelector(credential.username_field_selector);
+        if (usernameField) log('Campo usuario encontrado por selector', credential.username_field_selector);
       }
-      if (credential.password_field_selector) {
-        passwordField = document.querySelector(credential.password_field_selector);
-      }
-
-      // Si no se encontraron con selectores específicos, buscar automáticamente
       if (!usernameField) {
         usernameField = findField(USERNAME_PATTERNS);
+        if (usernameField) log('Campo usuario encontrado por patrones automáticos');
+      }
+
+      if (credential.password_field_selector) {
+        passwordField = document.querySelector(credential.password_field_selector);
+        if (passwordField) log('Campo contraseña encontrado por selector', credential.password_field_selector);
       }
       if (!passwordField) {
         passwordField = findField(PASSWORD_PATTERNS, usernameField ? [usernameField] : []);
+        if (passwordField) log('Campo contraseña encontrado por patrones automáticos');
       }
 
-      if (!usernameField || !passwordField) {
-        console.debug('HawCert: No se encontraron los campos de formulario');
-        return;
+      const hasUser = !!usernameField;
+      const hasPass = !!passwordField;
+
+      if (!hasUser && !hasPass) {
+        log('No se encontró ni campo usuario ni contraseña en esta página');
+        return false;
       }
 
-      // Obtener el formulario padre
-      const form = usernameField.closest('form') || passwordField.closest('form');
+      const form = (usernameField || passwordField).closest('form') || document.querySelector('form');
 
-      // Ocultar campos visualmente mientras se rellenan
-      const originalUsernameDisplay = usernameField.style.display;
-      const originalPasswordDisplay = passwordField.style.display;
-      const originalUsernameOpacity = usernameField.style.opacity;
-      const originalPasswordOpacity = passwordField.style.opacity;
-      const originalUsernameVisibility = usernameField.style.visibility;
-      const originalPasswordVisibility = passwordField.style.visibility;
-
-      // Ocultar temporalmente
-      usernameField.style.opacity = '0';
-      usernameField.style.visibility = 'hidden';
-      usernameField.style.position = 'absolute';
-      usernameField.style.left = '-9999px';
-
-      passwordField.style.opacity = '0';
-      passwordField.style.visibility = 'hidden';
-      passwordField.style.position = 'absolute';
-      passwordField.style.left = '-9999px';
-
-      // Rellenar campos
-      usernameField.value = credential.username;
-      passwordField.value = credential.password;
-
-      // Marcar como rellenados
-      filledFields.add(usernameField);
-      filledFields.add(passwordField);
-
-      // Disparar eventos para que los frameworks detecten el cambio
-      const events = ['input', 'change', 'keyup', 'keydown', 'focus', 'blur'];
-      events.forEach(eventType => {
-        usernameField.dispatchEvent(new Event(eventType, { bubbles: true, cancelable: true }));
-        passwordField.dispatchEvent(new Event(eventType, { bubbles: true, cancelable: true }));
-      });
-
-      // También disparar eventos nativos del navegador
-      const inputEvent = new InputEvent('input', { bubbles: true, cancelable: true });
-      usernameField.dispatchEvent(inputEvent);
-      passwordField.dispatchEvent(inputEvent);
-
-      // Restaurar visibilidad después de un breve delay
-      setTimeout(() => {
-        usernameField.style.opacity = originalUsernameOpacity || '';
-        usernameField.style.visibility = originalUsernameVisibility || '';
-        usernameField.style.position = '';
-        usernameField.style.left = '';
-
-        passwordField.style.opacity = originalPasswordOpacity || '';
-        passwordField.style.visibility = originalPasswordVisibility || '';
-        passwordField.style.position = '';
-        passwordField.style.left = '';
-      }, 100);
-
-      // Enviar formulario automáticamente (siempre)
-      if (form) {
-        setTimeout(() => {
-          // Buscar botón de envío
-          let submitButton = null;
-
-          // Si hay selector específico, usarlo primero
-          if (credential.submit_button_selector) {
-            submitButton = form.querySelector(credential.submit_button_selector);
+      // ——— Flujo: solo usuario (página pide usuario y luego "Siguiente") ———
+      if (hasUser && !hasPass) {
+        log('Solo campo usuario: rellenando usuario y buscando botón Siguiente');
+        fillFieldAndTrigger(usernameField, credential.username, 'Usuario');
+        const nextBtn = form ? findNextButton(form) : findNextButton(document.body);
+        if (nextBtn) {
+          log('Pulsando botón Siguiente:', nextBtn.textContent?.trim() || nextBtn.value);
+          nextBtn.focus();
+          nextBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+          nextBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+          nextBtn.click();
+        } else {
+          log('No se encontró botón Siguiente/Next; intentando submit del formulario');
+          const submitBtn = form ? findSubmitButton(form) : findSubmitButton(document.body);
+          if (submitBtn) {
+            submitBtn.focus();
+            submitBtn.click();
+          } else if (form) {
+            form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
           }
-
-          // Si no, buscar automáticamente
-          if (!submitButton) {
-            submitButton = findSubmitButton(form);
-          }
-
-          if (submitButton) {
-            // Simular clic real con eventos completos
-            submitButton.focus();
-            submitButton.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-            submitButton.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-            submitButton.click();
-          } else {
-            // Si no hay botón, intentar enviar el formulario directamente
-            // Primero intentar disparar evento submit para que los listeners lo capturen
-            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-            const submitted = form.dispatchEvent(submitEvent);
-
-            // Si el evento no fue cancelado, enviar el formulario
-            if (submitted) {
-              try {
-                form.submit();
-              } catch (e) {
-                // Si falla, intentar con Enter en el campo de contraseña
-                passwordField.dispatchEvent(new KeyboardEvent('keydown', {
-                  key: 'Enter',
-                  code: 'Enter',
-                  keyCode: 13,
-                  bubbles: true,
-                  cancelable: true
-                }));
-                passwordField.dispatchEvent(new KeyboardEvent('keyup', {
-                  key: 'Enter',
-                  code: 'Enter',
-                  keyCode: 13,
-                  bubbles: true,
-                  cancelable: true
-                }));
-                passwordField.dispatchEvent(new KeyboardEvent('keypress', {
-                  key: 'Enter',
-                  code: 'Enter',
-                  keyCode: 13,
-                  bubbles: true,
-                  cancelable: true
-                }));
-              }
-            }
-          }
-        }, 300);
-      } else {
-        // Si no hay formulario, intentar encontrar botones de envío en la página
-        setTimeout(() => {
-          let submitButton = findSubmitButton(document);
-          if (submitButton) {
-            submitButton.focus();
-            submitButton.click();
-          }
-        }, 300);
+        }
+        return true;
       }
+
+      // ——— Flujo: solo contraseña (segunda página tras haber puesto usuario) ———
+      if (!hasUser && hasPass) {
+        log('Solo campo contraseña: rellenando contraseña y enviando');
+        fillFieldAndTrigger(passwordField, credential.password, 'Contraseña');
+        clickSubmitButton(form, credential, passwordField);
+        return true;
+      }
+
+      // ——— Flujo: usuario y contraseña en la misma página ———
+      log('Usuario y contraseña en la misma página: rellenando ambos');
+      fillFieldAndTrigger(usernameField, credential.username, 'Usuario');
+      fillFieldAndTrigger(passwordField, credential.password, 'Contraseña');
+
+      clickSubmitButton(form, credential, passwordField);
+      return true;
     } catch (error) {
-      console.error('HawCert: Error al rellenar credenciales', error);
+      logError('Error al rellenar credenciales', error);
+      return false;
     } finally {
       isFilling = false;
     }
+  }
+
+  /**
+   * Busca y pulsa el botón de envío, o envía el formulario por Enter/submit()
+   */
+  function clickSubmitButton(form, credential, passwordField) {
+    const doClick = (btn, desc) => {
+      if (!btn) return false;
+      log('Pulsando botón de envío:', desc, btn.textContent?.trim() || btn.value);
+      btn.focus();
+      btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+      btn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+      btn.click();
+      return true;
+    };
+
+    setTimeout(() => {
+      let submitButton = null;
+      const root = form || document;
+
+      if (credential.submit_button_selector) {
+        submitButton = root.querySelector(credential.submit_button_selector);
+        if (submitButton) {
+          doClick(submitButton, 'selector configurado');
+          return;
+        }
+      }
+
+      submitButton = form ? findSubmitButton(form) : findSubmitButton(document);
+      if (doClick(submitButton, 'detección automática')) return;
+
+      if (form) {
+        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+        const submitted = form.dispatchEvent(submitEvent);
+        if (submitted) {
+          try {
+            form.submit();
+            log('Formulario enviado con form.submit()');
+          } catch (e) {
+            log('form.submit() falló, simulando Enter en contraseña');
+            if (passwordField) {
+              ['keydown', 'keyup', 'keypress'].forEach(type => {
+                passwordField.dispatchEvent(new KeyboardEvent(type, {
+                  key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true, cancelable: true
+                }));
+              });
+            }
+          }
+        } else {
+          log('El formulario canceló el evento submit');
+        }
+      } else {
+        const anySubmit = findSubmitButton(document);
+        if (anySubmit) doClick(anySubmit, 'en documento');
+        else log('No se encontró formulario ni botón de envío');
+      }
+    }, 300);
   }
 
 
   // Escuchar mensajes del popup para rellenar manualmente
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'fillNow') {
-      checkAndFill().then(() => {
-        sendResponse({ success: true });
-      }).catch(() => {
-        sendResponse({ success: false });
-      });
+      checkAndFill()
+        .then((filled) => {
+          sendResponse({ success: filled === true });
+        })
+        .catch((err) => {
+          logError('fillNow error', err);
+          sendResponse({ success: false });
+        });
       return true; // Mantener el canal abierto para respuesta asíncrona
     }
   });

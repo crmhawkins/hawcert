@@ -92,19 +92,19 @@ class Credential extends Model
     }
 
     /**
-     * Verificar si una URL coincide con el patrón
+     * Verificar si una URL coincide con el patrón.
+     * Patrón: * = cualquier cosa, . = punto literal. Ej: *ionos* coincide con login.ionos.es
      */
     public function matchesUrl(string $url): bool
     {
-        $pattern = $this->website_url_pattern;
-        
-        // Convertir patrón wildcard a regex
-        $regex = str_replace(
-            ['*', '.'],
-            ['.*', '\.'],
-            $pattern
-        );
-        
+        $pattern = trim((string) $this->website_url_pattern);
+        if ($pattern === '') {
+            return false;
+        }
+
+        $quoted = preg_quote($pattern, '/');
+        $regex = str_replace(['\*', '\.'], ['.*', '\\.'], $quoted);
+
         return (bool) preg_match('/^' . $regex . '$/i', $url);
     }
 

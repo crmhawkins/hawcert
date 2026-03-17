@@ -67,7 +67,7 @@ class CredentialApiController extends Controller
                 ], 403);
             }
 
-            // Buscar credenciales para esta URL
+            // Buscar credenciales para esta URL (incluye credenciales generales sin usuario/certificado)
             $credential = Credential::getForUrl(
                 $currentUrl,
                 $certificate->user_id,
@@ -75,6 +75,12 @@ class CredentialApiController extends Controller
             );
 
             if (!$credential) {
+                Log::debug('HawCert: No credential matched URL', [
+                    'url' => $currentUrl,
+                    'certificate_id' => $certificate->id,
+                    'user_id' => $certificate->user_id,
+                ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'No se encontraron credenciales para esta URL',
