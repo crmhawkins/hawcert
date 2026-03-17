@@ -44,13 +44,15 @@
             </div>
 
             <div>
-                <label for="username_field_selector" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Selector CSS del Campo Usuario</label>
-                <input type="text" name="username_field_selector" id="username_field_selector" required value="{{ old('username_field_selector', $credential->username_field_selector) }}" placeholder="Ej: #username, input[name='email']" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <label for="username_field_selector" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Selector CSS del Campo Usuario (opcional)</label>
+                <input type="text" name="username_field_selector" id="username_field_selector" value="{{ old('username_field_selector', $credential->username_field_selector) }}" placeholder="Ej: #username, input[name='email']" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Si se deja vacío, la extensión detectará automáticamente campos comunes (email, user, username, etc.)</p>
             </div>
 
             <div>
-                <label for="password_field_selector" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Selector CSS del Campo Contraseña</label>
-                <input type="text" name="password_field_selector" id="password_field_selector" required value="{{ old('password_field_selector', $credential->password_field_selector) }}" placeholder="Ej: #password, input[type='password']" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <label for="password_field_selector" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Selector CSS del Campo Contraseña (opcional)</label>
+                <input type="text" name="password_field_selector" id="password_field_selector" value="{{ old('password_field_selector', $credential->password_field_selector) }}" placeholder="Ej: #password, input[type='password']" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Si se deja vacío, la extensión detectará automáticamente campos de contraseña</p>
             </div>
 
             <div>
