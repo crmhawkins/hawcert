@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccessKey;
+use App\Models\CertificateUsageLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -143,6 +144,14 @@ class KeyValidationController extends Controller
                 'client_ip' => $clientIp,
                 'used_at' => $accessKey->used_at,
             ]);
+
+            CertificateUsageLog::logUsage(
+                $accessKey->certificate_id,
+                'key_validation',
+                $accessKey->target_url ?: $accessKey->service_slug,
+                $clientIp,
+                $request->userAgent()
+            );
 
             $loginIdentifier = $accessKey->certificate->getAuthUsernameForService($accessKey->service_slug ?? '');
 

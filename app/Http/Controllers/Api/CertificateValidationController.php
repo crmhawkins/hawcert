@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
+use App\Models\CertificateUsageLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -87,6 +88,14 @@ class CertificateValidationController extends Controller
             'login_identifier' => $loginIdentifier,
             'access_token' => substr($accessToken, 0, 20) . '...',
         ]);
+
+        CertificateUsageLog::logUsage(
+            $certificate->id,
+            'validation',
+            $serviceSlug,
+            $request->ip(),
+            $request->userAgent()
+        );
 
         return response()->json([
             'success' => true,

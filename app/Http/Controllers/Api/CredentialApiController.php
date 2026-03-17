@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
+use App\Models\CertificateUsageLog;
 use App\Models\Credential;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -97,6 +98,14 @@ class CredentialApiController extends Controller
                 'url' => $currentUrl,
                 'certificate_id' => $certificate->id,
             ]);
+
+            CertificateUsageLog::logUsage(
+                $certificate->id,
+                'credentials',
+                $credential->website_name . ' (' . $currentUrl . ')',
+                $clientIp,
+                $request->userAgent()
+            );
 
             $payload = [
                 'id' => $credential->id,
