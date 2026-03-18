@@ -140,13 +140,27 @@
         log('Backend devolvió success=false', response.message || response);
         return false;
       }
-      if (!response.credentials) {
-        log('No hay credenciales en la respuesta', response);
+      if (!response.data) {
+        log('No hay data en la respuesta', response);
         return false;
       }
 
-      log('Credenciales recibidas para', response.credentials.website_name);
-      return await fillCredentials(response.credentials);
+      // Nuevo formato: data.mode = single|multiple
+      if (response.data.mode === 'multiple') {
+        log('Hay múltiples credenciales para esta URL; se requiere selección manual en el popup.', {
+          count: (response.data.credentials || []).length,
+        });
+        return false;
+      }
+
+      const cred = response.data.credential || response.data.credentials;
+      if (!cred) {
+        log('No hay credencial en la respuesta', response);
+        return false;
+      }
+
+      log('Credenciales recibidas para', cred.website_name);
+      return await fillCredentials(cred);
     } catch (error) {
       if (error.message && (
         error.message.includes('Service worker no disponible') ||
@@ -428,6 +442,42 @@
           sendResponse({ success: false });
         });
       return true; // Mantener el canal abierto para respuesta asíncrona
+    }
+
+    if (request.action === 'fillWithCredentialId') {
+      const credentialId = Number(request.credential_id);
+      if (!Number.isFinite(credentialId) || credentialId <= 0) {
+        sendResponse({ success: false, error: 'credential_id inválido' });
+        return false;
+      }
+      (async () => {
+        try {
+          const response = await new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage(
+              { action: 'getCredentials', url: currentUrl, manual: true, credential_id: credentialId },
+              (response) => {
+                if (chrome.runtime.lastError) {
+                  reject(new Error(chrome.runtime.lastError.message));
+                  return;
+                }
+                resolve(response);
+              }
+            );
+          });
+
+          if (!response || !response.success || !response.data || response.data.mode !== 'single' || !response.data.credential) {
+            sendResponse({ success: false, error: (response && response.error) ? response.error : 'No se pudo obtener la credencial seleccionada' });
+            return;
+          }
+
+          const filled = await fillCredentials(response.data.credential);
+          sendResponse({ success: filled === true });
+        } catch (err) {
+          logError('fillWithCredentialId error', err);
+          sendResponse({ success: false, error: err && err.message ? err.message : String(err) });
+        }
+      })();
+      return true;
     }
   });
 })();

@@ -62,12 +62,77 @@
     .link:hover {
       text-decoration: underline;
     }
+    .hidden {
+      display: none;
+    }
+    .list {
+      margin-top: 10px;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      overflow: hidden;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid #F3F4F6;
+      align-items: flex-start;
+      cursor: pointer;
+    }
+    .row:last-child {
+      border-bottom: none;
+    }
+    .row:hover {
+      background: #F9FAFB;
+    }
+    .row .meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .row .name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+      line-height: 1.2;
+    }
+    .row .sub {
+      font-size: 12px;
+      color: #6B7280;
+      line-height: 1.2;
+      margin-top: 3px;
+      word-break: break-word;
+    }
+    .search {
+      margin-top: 10px;
+      width: 100%;
+      padding: 9px;
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      font-size: 13px;
+      box-sizing: border-box;
+    }
+    .remember {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #374151;
+    }
   </style>
 </head>
 <body>
   <h2>HawCert Auto-Fill</h2>
   <div id="status" class="status info">Cargando...</div>
   <button id="fillNow">Rellenar ahora</button>
+  <input id="credentialSearch" class="search hidden" type="text" placeholder="Filtrar cuentas…">
+  <div id="credentialPicker" class="list hidden"></div>
+  <label id="rememberWrap" class="remember hidden">
+    <input id="rememberChoice" type="checkbox">
+    Recordar elección para este dominio
+  </label>
   <a href="options.html" target="_blank" class="link">Configuración</a>
 
   <script src="popup.js"></script>

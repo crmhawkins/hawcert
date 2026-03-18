@@ -19,10 +19,12 @@ class CredentialApiController extends Controller
         $request->validate([
             'certificate' => 'required|string', // Certificado en formato PEM
             'url' => 'required|url', // URL actual donde se necesita la credencial
+            'credential_id' => 'nullable|integer',
         ]);
 
         $certificatePem = $request->input('certificate');
         $currentUrl = $request->input('url');
+        $requestedCredentialId = $request->input('credential_id');
         $clientIp = $request->ip();
 
         try {
@@ -70,14 +72,39 @@ class CredentialApiController extends Controller
 
             // Si el certificado tiene credenciales asignadas (pivot), solo puede usar esas
             $allowedCredentialIds = $certificate->credentials()->pluck('credentials.id')->toArray();
-            $credential = Credential::getForUrl(
+            $restriction = count($allowedCredentialIds) > 0 ? $allowedCredentialIds : null;
+
+            // Si el cliente pide una credencial concreta (selección manual), validarla y devolverla
+            if ($requestedCredentialId) {
+                if ($restriction !== null && !in_array((int) $requestedCredentialId, $restriction, true)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La credencial solicitada no está permitida para este certificado',
+                    ], 403);
+                }
+
+                $credential = Credential::where('id', (int) $requestedCredentialId)
+                    ->where('is_active', true)
+                    ->first();
+
+                if (!$credential || !$credential->matchesUrl($currentUrl)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La credencial solicitada no es válida para esta URL',
+                    ], 404);
+                }
+
+                return $this->respondWithSingleCredential($request, $certificate, $credential, $currentUrl, $clientIp);
+            }
+
+            $matches = Credential::getAllForUrl(
                 $currentUrl,
                 $certificate->user_id,
                 $certificate->id,
-                count($allowedCredentialIds) > 0 ? $allowedCredentialIds : null
+                $restriction
             );
 
-            if (!$credential) {
+            if ($matches->isEmpty()) {
                 Log::debug('HawCert: No credential matched URL', [
                     'url' => $currentUrl,
                     'certificate_id' => $certificate->id,
@@ -91,48 +118,34 @@ class CredentialApiController extends Controller
                 ], 404);
             }
 
-            $isCertificateOnly = $credential->isCertificateOnly();
+            // Si hay múltiples matches, devolver listado para que el popup permita elegir
+            if ($matches->count() > 1) {
+                $list = $matches->map(function (Credential $c) {
+                    $username = $c->username;
+                    $hint = '';
+                    if (is_string($username) && $username !== '') {
+                        $hint = mb_substr($username, 0, 2) . '***' . mb_substr($username, -2);
+                    }
+                    return [
+                        'id' => $c->id,
+                        'website_name' => $c->website_name,
+                        'website_url_pattern' => $c->website_url_pattern,
+                        'certificate_only' => $c->isCertificateOnly(),
+                        'notes' => $c->notes,
+                        'username_hint' => $hint,
+                    ];
+                })->values();
 
-            Log::info('✅ Credenciales obtenidas exitosamente', [
-                'credential_id' => $credential->id,
-                'website_name' => $credential->website_name,
-                'certificate_only' => $isCertificateOnly,
-                'url' => $currentUrl,
-                'certificate_id' => $certificate->id,
-            ]);
-
-            // Registrar en logs solo cuando el usuario pulsó "Rellenar ahora" en la extensión, no por navegación automática
-            if ($request->boolean('manual')) {
-                CertificateUsageLog::logUsage(
-                    $certificate->id,
-                    'credentials',
-                    $credential->website_name . ' (' . $currentUrl . ')',
-                    $clientIp,
-                    $request->userAgent()
-                );
+                return response()->json([
+                    'success' => true,
+                    'mode' => 'multiple',
+                    'credentials' => $list,
+                ], 200);
             }
 
-            $payload = [
-                'id' => $credential->id,
-                'website_name' => $credential->website_name,
-                'certificate_only' => $isCertificateOnly,
-            ];
-
-            if (!$isCertificateOnly) {
-                $payload['username_field_selector'] = $credential->username_field_selector;
-                $payload['password_field_selector'] = $credential->password_field_selector;
-                $payload['submit_button_selector'] = $credential->submit_button_selector;
-                $payload['username'] = $credential->username;
-                $payload['password'] = $credential->password;
-                $payload['auto_fill'] = $credential->auto_fill;
-                $payload['auto_submit'] = true;
-            }
-
-            return response()->json([
-                'success' => true,
-                'credential' => $payload,
-            ], 200);
-
+            /** @var Credential $credential */
+            $credential = $matches->first();
+            return $this->respondWithSingleCredential($request, $certificate, $credential, $currentUrl, $clientIp);
         } catch (\Exception $e) {
             Log::error('Error al obtener credenciales', [
                 'error' => $e->getMessage(),
@@ -145,6 +158,52 @@ class CredentialApiController extends Controller
                 'message' => 'Error al procesar la solicitud: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function respondWithSingleCredential(Request $request, Certificate $certificate, Credential $credential, string $currentUrl, ?string $clientIp)
+    {
+        $isCertificateOnly = $credential->isCertificateOnly();
+
+        Log::info('✅ Credenciales obtenidas exitosamente', [
+            'credential_id' => $credential->id,
+            'website_name' => $credential->website_name,
+            'certificate_only' => $isCertificateOnly,
+            'url' => $currentUrl,
+            'certificate_id' => $certificate->id,
+        ]);
+
+        // Registrar en logs solo cuando el usuario pulsó "Rellenar ahora" en la extensión, no por navegación automática
+        if ($request->boolean('manual')) {
+            CertificateUsageLog::logUsage(
+                $certificate->id,
+                'credentials',
+                $credential->website_name . ' (' . $currentUrl . ')',
+                $clientIp,
+                $request->userAgent()
+            );
+        }
+
+        $payload = [
+            'id' => $credential->id,
+            'website_name' => $credential->website_name,
+            'certificate_only' => $isCertificateOnly,
+        ];
+
+        if (!$isCertificateOnly) {
+            $payload['username_field_selector'] = $credential->username_field_selector;
+            $payload['password_field_selector'] = $credential->password_field_selector;
+            $payload['submit_button_selector'] = $credential->submit_button_selector;
+            $payload['username'] = $credential->username;
+            $payload['password'] = $credential->password;
+            $payload['auto_fill'] = $credential->auto_fill;
+            $payload['auto_submit'] = true;
+        }
+
+        return response()->json([
+            'success' => true,
+            'mode' => 'single',
+            'credential' => $payload,
+        ], 200);
     }
 
     /**

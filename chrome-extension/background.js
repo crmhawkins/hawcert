@@ -24,9 +24,9 @@ chrome.runtime.onConnect.addListener((port) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Manejar mensajes de forma asíncrona
   if (request.action === 'getCredentials') {
-    getCredentials(request.url, request.manual === true)
-      .then(credentials => {
-        sendResponse({ success: true, credentials });
+    getCredentials(request.url, request.manual === true, request.credential_id)
+      .then(data => {
+        sendResponse({ success: true, data });
       })
       .catch(error => {
         sendResponse({ success: false, error: error.message });
@@ -64,8 +64,9 @@ function showCertificateOnlyNotification(websiteName) {
  * Obtiene credenciales desde la API de HawCert.
  * @param {string} url - URL actual
  * @param {boolean} manual - true si el usuario pulsó "Rellenar ahora" (solo entonces el servidor registra el uso en logs)
+ * @param {number|null} credentialId - credencial concreta a devolver (selección manual)
  */
-async function getCredentials(url, manual = false) {
+async function getCredentials(url, manual = false, credentialId = null) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(['config'], async (result) => {
       const config = result.config || DEFAULT_CONFIG;
@@ -90,6 +91,7 @@ async function getCredentials(url, manual = false) {
             certificate: config.certificate,
             url: url,
             manual: !!manual,
+            credential_id: typeof credentialId === 'number' ? credentialId : undefined,
           }),
         });
 
@@ -100,7 +102,7 @@ async function getCredentials(url, manual = false) {
           return;
         }
 
-        resolve(data.credential);
+        resolve(data);
       } catch (error) {
         reject(new Error(`Error de red: ${error.message}`));
       }

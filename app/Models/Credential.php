@@ -147,6 +147,19 @@ class Credential extends Model
      */
     public static function getForUrl(string $url, ?int $userId = null, ?int $certificateId = null, ?array $allowedCredentialIds = null): ?self
     {
+        $all = self::getAllForUrl($url, $userId, $certificateId, $allowedCredentialIds);
+        return $all->first();
+    }
+
+    /**
+     * Obtiene TODAS las credenciales que aplican a una URL, ordenadas por prioridad.
+     * - Si $allowedCredentialIds es una lista no vacía, limita a esas credenciales (restricción por certificado).
+     * - En modo legacy (sin restricción), prioriza: específica por certificado > específica por usuario > general.
+     *
+     * @return \Illuminate\Support\Collection<int, self>
+     */
+    public static function getAllForUrl(string $url, ?int $userId = null, ?int $certificateId = null, ?array $allowedCredentialIds = null)
+    {
         $query = self::where('is_active', true);
 
         if ($allowedCredentialIds !== null && count($allowedCredentialIds) > 0) {
@@ -168,25 +181,26 @@ class Credential extends Model
         $candidates = $query->get()->filter(fn ($c) => $c->matchesUrl($url));
 
         if ($candidates->isEmpty()) {
-            return null;
+            return collect();
         }
 
         if ($allowedCredentialIds !== null && count($allowedCredentialIds) > 0) {
-            return $candidates->first();
+            // Mantener un orden estable por nombre para que el selector sea consistente
+            return $candidates->sortBy(fn ($c) => (string) ($c->website_name ?? ''))->values();
         }
 
         // Priorizar: específica (certificado o usuario) antes que general
-        $sorted = $candidates->sortByDesc(function ($c) use ($userId, $certificateId) {
-            $score = 0;
-            if ($certificateId && $c->certificate_id == $certificateId) {
-                $score += 2;
-            }
-            if ($userId && $c->user_id == $userId) {
-                $score += 1;
-            }
-            return $score;
-        });
-
-        return $sorted->first();
+        return $candidates
+            ->sortByDesc(function ($c) use ($userId, $certificateId) {
+                $score = 0;
+                if ($certificateId && $c->certificate_id == $certificateId) {
+                    $score += 2;
+                }
+                if ($userId && $c->user_id == $userId) {
+                    $score += 1;
+                }
+                return $score;
+            })
+            ->values();
     }
 }
