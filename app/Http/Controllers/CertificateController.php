@@ -53,6 +53,7 @@ class CertificateController extends Controller
             'credential_ids' => 'nullable|array',
             'credential_ids.*' => 'exists:credentials,id',
             'is_becario' => 'boolean',
+            'can_access_hawcert' => 'boolean',
         ]);
 
         $isBecario = (bool) ($validated['is_becario'] ?? false);
@@ -98,6 +99,7 @@ class CertificateController extends Controller
             'never_expires' => $neverExpires,
             'is_active' => true,
             'is_becario' => $isBecario,
+            'can_access_hawcert' => (bool) ($validated['can_access_hawcert'] ?? false),
         ]);
 
         if (isset($validated['services'])) {
@@ -164,6 +166,7 @@ class CertificateController extends Controller
             'credential_ids' => 'nullable|array',
             'credential_ids.*' => 'exists:credentials,id',
             'is_becario' => 'boolean',
+            'can_access_hawcert' => 'boolean',
         ]);
 
         $isBecario = (bool) ($validated['is_becario'] ?? false);
@@ -221,6 +224,7 @@ class CertificateController extends Controller
                 'never_expires' => $neverExpires,
                 'is_active' => $validated['is_active'] ?? $certificate->is_active,
                 'is_becario' => $isBecario,
+                'can_access_hawcert' => (bool) ($validated['can_access_hawcert'] ?? false),
             ]);
         } else {
             $certificate->update([
@@ -233,6 +237,7 @@ class CertificateController extends Controller
                 'never_expires' => $neverExpires,
                 'is_active' => $validated['is_active'] ?? $certificate->is_active,
                 'is_becario' => $isBecario,
+                'can_access_hawcert' => (bool) ($validated['can_access_hawcert'] ?? false),
             ]);
         }
 

@@ -79,6 +79,14 @@
             </div>
 
             <div class="sm:col-span-2">
+                <label class="flex items-center">
+                    <input type="checkbox" name="can_access_hawcert" value="1" {{ old('can_access_hawcert', $certificate->can_access_hawcert ?? false) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Acceso a HawCert (plataforma principal)</span>
+                </label>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Si está marcado, este certificado podrá autenticarse en la plataforma HawCert. Debe tener también el servicio «HawCert» asignado en Servicios.</p>
+            </div>
+
+            <div class="sm:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Servicios</label>
                 <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Por defecto se usará el email del certificado. Opcionalmente puede indicar un usuario (ej: user1921) que se enviará en lugar del email en ese servicio.</p>
                 <div class="space-y-3">

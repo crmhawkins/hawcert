@@ -105,6 +105,17 @@
             </div>
 
             <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Acceso a HawCert</dt>
+                <dd class="mt-1">
+                    @if($certificate->can_access_hawcert ?? false)
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">Sí</span>
+                    @else
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">No</span>
+                    @endif
+                </dd>
+            </div>
+
+            <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Estado</dt>
                 <dd class="mt-1">
                     @if($certificate->isValid())

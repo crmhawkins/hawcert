@@ -98,6 +98,19 @@ class AccessValidationController extends Controller
                 ], 403);
             }
 
+            if ($serviceSlug === Certificate::HAWCERT_SERVICE_SLUG && !$certificate->can_access_hawcert) {
+                Log::warning('Intento de acceso a HawCert sin permiso', [
+                    'certificate_id' => $certificate->id,
+                    'url' => $targetUrl,
+                    'client_ip' => $clientIp,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este certificado no tiene acceso a la plataforma HawCert',
+                ], 403);
+            }
+
             // Verificar que el servicio exista y esté activo
             $service = Service::where('slug', $serviceSlug)->where('is_active', true)->first();
             if (!$service) {

@@ -110,6 +110,19 @@ class KeyValidationController extends Controller
                 ], 403);
             }
 
+            if ($accessKey->service_slug === \App\Models\Certificate::HAWCERT_SERVICE_SLUG && !$accessKey->certificate->can_access_hawcert) {
+                Log::warning('Key para HawCert sin permiso de acceso a plataforma', [
+                    'key_id' => $accessKey->id,
+                    'certificate_id' => $accessKey->certificate_id,
+                    'client_ip' => $clientIp,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este certificado no tiene acceso a la plataforma HawCert',
+                ], 403);
+            }
+
             // CRÍTICO: Marcar la key como usada ANTES de devolver la respuesta
             // Usar transacción para evitar condiciones de carrera
             $marked = \DB::transaction(function () use ($accessKey) {

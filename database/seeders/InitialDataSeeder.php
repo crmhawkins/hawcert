@@ -27,6 +27,7 @@ class InitialDataSeeder extends Seeder
 
         // Crear servicios básicos
         $services = [
+            ['name' => 'HawCert', 'slug' => \App\Models\Certificate::HAWCERT_SERVICE_SLUG, 'description' => 'Plataforma principal HawCert', 'endpoint' => null],
             ['name' => 'API Principal', 'slug' => 'api', 'description' => 'API principal del sistema', 'endpoint' => 'https://api.example.com'],
             ['name' => 'Panel de Control', 'slug' => 'dashboard', 'description' => 'Panel de control administrativo', 'endpoint' => 'https://dashboard.example.com'],
             ['name' => 'Reportes', 'slug' => 'reports', 'description' => 'Sistema de reportes', 'endpoint' => 'https://reports.example.com'],

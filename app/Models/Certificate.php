@@ -24,8 +24,12 @@ class Certificate extends Model
         'never_expires',
         'is_active',
         'is_becario',
+        'can_access_hawcert',
         'metadata',
     ];
+
+    /** Slug del servicio que representa la plataforma principal HawCert */
+    public const HAWCERT_SERVICE_SLUG = 'hawcert';
 
     protected $casts = [
         'valid_from' => 'datetime',
@@ -33,6 +37,7 @@ class Certificate extends Model
         'never_expires' => 'boolean',
         'is_active' => 'boolean',
         'is_becario' => 'boolean',
+        'can_access_hawcert' => 'boolean',
         'metadata' => 'array',
     ];
 

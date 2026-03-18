@@ -69,6 +69,18 @@ class CertificateValidationController extends Controller
             ], 403);
         }
 
+        if ($serviceSlug === Certificate::HAWCERT_SERVICE_SLUG && !$certificate->can_access_hawcert) {
+            Log::warning('Intento de acceso a HawCert sin permiso', [
+                'certificate_id' => $certificate->id,
+                'origin' => $origin,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Este certificado no tiene acceso a la plataforma HawCert',
+            ], 403);
+        }
+
         // Generar token de acceso temporal
         $accessToken = bin2hex(random_bytes(32));
         $expiresAt = now()->addHours(24);
