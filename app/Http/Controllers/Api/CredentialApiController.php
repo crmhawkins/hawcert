@@ -99,13 +99,16 @@ class CredentialApiController extends Controller
                 'certificate_id' => $certificate->id,
             ]);
 
-            CertificateUsageLog::logUsage(
-                $certificate->id,
-                'credentials',
-                $credential->website_name . ' (' . $currentUrl . ')',
-                $clientIp,
-                $request->userAgent()
-            );
+            // Registrar en logs solo cuando el usuario pulsó "Rellenar ahora" en la extensión, no por navegación automática
+            if ($request->boolean('manual')) {
+                CertificateUsageLog::logUsage(
+                    $certificate->id,
+                    'credentials',
+                    $credential->website_name . ' (' . $currentUrl . ')',
+                    $clientIp,
+                    $request->userAgent()
+                );
+            }
 
             $payload = [
                 'id' => $credential->id,

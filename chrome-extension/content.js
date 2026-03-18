@@ -100,12 +100,13 @@
   });
 
   /**
-   * Verifica si hay credenciales para esta URL y las rellena
+   * Verifica si hay credenciales para esta URL y las rellena.
+   * @param {boolean} manual - true si el usuario pulsó "Rellenar ahora" en la extensión (solo entonces se registra en logs del servidor)
    */
-  async function checkAndFill() {
+  async function checkAndFill(manual = false) {
     if (isFilling) return false;
 
-    log('checkAndFill iniciado', { url: currentUrl });
+    log('checkAndFill iniciado', { url: currentUrl, manual });
 
     try {
       if (!chrome.runtime || !chrome.runtime.sendMessage) {
@@ -115,7 +116,7 @@
 
       const response = await new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(
-          { action: 'getCredentials', url: currentUrl },
+          { action: 'getCredentials', url: currentUrl, manual: !!manual },
           (response) => {
             if (chrome.runtime.lastError) {
               const msg = chrome.runtime.lastError.message;
@@ -415,10 +416,10 @@
   }
 
 
-  // Escuchar mensajes del popup para rellenar manualmente
+  // Escuchar mensajes del popup para rellenar manualmente (clic en "Rellenar ahora")
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'fillNow') {
-      checkAndFill()
+      checkAndFill(true)
         .then((filled) => {
           sendResponse({ success: filled === true });
         })

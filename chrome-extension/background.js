@@ -24,7 +24,7 @@ chrome.runtime.onConnect.addListener((port) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Manejar mensajes de forma asíncrona
   if (request.action === 'getCredentials') {
-    getCredentials(request.url)
+    getCredentials(request.url, request.manual === true)
       .then(credentials => {
         sendResponse({ success: true, credentials });
       })
@@ -61,9 +61,11 @@ function showCertificateOnlyNotification(websiteName) {
 }
 
 /**
- * Obtiene credenciales desde la API de HawCert
+ * Obtiene credenciales desde la API de HawCert.
+ * @param {string} url - URL actual
+ * @param {boolean} manual - true si el usuario pulsó "Rellenar ahora" (solo entonces el servidor registra el uso en logs)
  */
-async function getCredentials(url) {
+async function getCredentials(url, manual = false) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(['config'], async (result) => {
       const config = result.config || DEFAULT_CONFIG;
@@ -87,6 +89,7 @@ async function getCredentials(url) {
           body: JSON.stringify({
             certificate: config.certificate,
             url: url,
+            manual: !!manual,
           }),
         });
 
