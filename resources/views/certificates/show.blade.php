@@ -172,6 +172,21 @@
                     @endif
                 </dd>
             </div>
+
+            <div class="sm:col-span-2">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Acceso a credenciales</dt>
+                <dd class="mt-1">
+                    @if($certificate->credentials->count() > 0)
+                        <ul class="space-y-1">
+                            @foreach($certificate->credentials as $cred)
+                                <li class="text-sm text-gray-900 dark:text-white">{{ $cred->website_name }} <span class="text-gray-500 dark:text-gray-400">— {{ $cred->website_url_pattern }}</span></li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Sin credenciales asignadas (no podrá usar la extensión para rellenar credenciales)</span>
+                    @endif
+                </dd>
+            </div>
         </dl>
     </div>
 </div>

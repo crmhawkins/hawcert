@@ -109,6 +109,21 @@
                     @endforeach
                 </div>
             </div>
+
+            <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Acceso a credenciales</label>
+                <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Solo podrá usar las credenciales (servicios con usuario/contraseña o solo certificado) que marque aquí. Si no marca ninguna, no tendrá acceso a credenciales desde la extensión.</p>
+                <input type="text" id="credential-search" placeholder="Buscar por nombre o URL…" class="mb-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <div id="credential-list" class="max-h-64 overflow-y-auto space-y-2 rounded border border-gray-200 dark:border-gray-600 p-3">
+                    @foreach($credentials as $cred)
+                        <label class="credential-row flex items-center gap-2 py-1.5 text-sm" data-name="{{ Str::lower($cred->website_name ?? '') }}" data-pattern="{{ Str::lower($cred->website_url_pattern ?? '') }}">
+                            <input type="checkbox" name="credential_ids[]" value="{{ $cred->id }}" {{ $certificate->credentials->contains($cred->id) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span class="font-medium text-gray-700 dark:text-gray-300">{{ $cred->website_name }}</span>
+                            <span class="text-gray-500 dark:text-gray-400 truncate">— {{ $cred->website_url_pattern }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
         </div>
 
         <div class="mt-6 flex justify-end space-x-3">
@@ -163,6 +178,18 @@ document.addEventListener('DOMContentLoaded', function() {
         isBecarioCheckbox.addEventListener('change', updateValidUntilState);
     }
     updateValidUntilState();
+
+    var credentialSearch = document.getElementById('credential-search');
+    var credentialRows = document.querySelectorAll('.credential-row');
+    if (credentialSearch && credentialRows.length) {
+        credentialSearch.addEventListener('input', function() {
+            var q = this.value.trim().toLowerCase();
+            credentialRows.forEach(function(row) {
+                var show = !q || (row.getAttribute('data-name') && row.getAttribute('data-name').indexOf(q) !== -1) || (row.getAttribute('data-pattern') && row.getAttribute('data-pattern').indexOf(q) !== -1);
+                row.style.display = show ? '' : 'none';
+            });
+        });
+    }
 });
 </script>
 @endsection

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Certificate;
+use App\Models\Credential;
 use App\Models\Service;
 use App\Models\Permission;
 use App\Services\CertificateGeneratorService;
@@ -26,8 +27,9 @@ class CertificateController extends Controller
         $users = \App\Models\User::all();
         $services = Service::where('is_active', true)->get();
         $permissions = Permission::all();
-        
-        return view('certificates.create', compact('users', 'services', 'permissions'));
+        $credentials = Credential::where('is_active', true)->orderBy('website_name')->get();
+
+        return view('certificates.create', compact('users', 'services', 'permissions', 'credentials'));
     }
 
     public function store(Request $request)
@@ -48,6 +50,8 @@ class CertificateController extends Controller
             'service_auth_username.*' => 'nullable|string|max:255',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
+            'credential_ids' => 'nullable|array',
+            'credential_ids.*' => 'exists:credentials,id',
             'is_becario' => 'boolean',
         ]);
 
@@ -111,23 +115,31 @@ class CertificateController extends Controller
             $certificate->permissions()->attach($validated['permissions']);
         }
 
+        if (isset($validated['credential_ids'])) {
+            $certificate->credentials()->sync($validated['credential_ids']);
+        } else {
+            $certificate->credentials()->sync([]);
+        }
+
         return redirect()->route('certificates.index')
             ->with('success', 'Certificado X.509 creado exitosamente.');
     }
 
     public function show(Certificate $certificate)
     {
-        $certificate->load(['user', 'services', 'permissions']);
+        $certificate->load(['user', 'services', 'permissions', 'credentials']);
         return view('certificates.show', compact('certificate'));
     }
 
     public function edit(Certificate $certificate)
     {
+        $certificate->load('credentials');
         $users = \App\Models\User::all();
         $services = Service::where('is_active', true)->get();
         $permissions = Permission::all();
-        
-        return view('certificates.edit', compact('certificate', 'users', 'services', 'permissions'));
+        $credentials = Credential::where('is_active', true)->orderBy('website_name')->get();
+
+        return view('certificates.edit', compact('certificate', 'users', 'services', 'permissions', 'credentials'));
     }
 
     public function update(Request $request, Certificate $certificate)
@@ -149,6 +161,8 @@ class CertificateController extends Controller
             'service_auth_username.*' => 'nullable|string|max:255',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
+            'credential_ids' => 'nullable|array',
+            'credential_ids.*' => 'exists:credentials,id',
             'is_becario' => 'boolean',
         ]);
 
@@ -239,6 +253,10 @@ class CertificateController extends Controller
             $certificate->permissions()->sync($validated['permissions']);
         } else {
             $certificate->permissions()->detach();
+        }
+
+        if (array_key_exists('credential_ids', $validated)) {
+            $certificate->credentials()->sync($validated['credential_ids'] ?? []);
         }
 
         return redirect()->route('certificates.index')

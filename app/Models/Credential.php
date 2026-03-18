@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Crypt;
 
 class Credential extends Model
@@ -48,11 +49,19 @@ class Credential extends Model
     }
 
     /**
-     * Relación con el certificado
+     * Relación con el certificado (asignación directa legacy)
      */
     public function certificate(): BelongsTo
     {
         return $this->belongsTo(Certificate::class);
+    }
+
+    /**
+     * Certificados que tienen acceso a esta credencial (pivot certificate_credential)
+     */
+    public function certificates(): BelongsToMany
+    {
+        return $this->belongsToMany(Certificate::class, 'certificate_credential');
     }
 
     /**
@@ -132,14 +141,18 @@ class Credential extends Model
     }
 
     /**
-     * Obtener credenciales para una URL y certificado/usuario.
-     * Incluye credenciales "generales" (sin usuario ni certificado), que aplican a cualquier certificado.
-     * Prioridad: credencial específica (usuario/certificado) > credencial general.
+     * Obtener credencial para una URL y certificado/usuario.
+     * Si se pasa $allowedCredentialIds (lista no vacía), solo se consideran esas credenciales (acceso restringido por certificado).
+     * Si no, se aplica lógica legacy: generales, por usuario o por certificado.
      */
-    public static function getForUrl(string $url, ?int $userId = null, ?int $certificateId = null): ?self
+    public static function getForUrl(string $url, ?int $userId = null, ?int $certificateId = null, ?array $allowedCredentialIds = null): ?self
     {
-        $candidates = self::where('is_active', true)
-            ->where(function ($q) use ($userId, $certificateId) {
+        $query = self::where('is_active', true);
+
+        if ($allowedCredentialIds !== null && count($allowedCredentialIds) > 0) {
+            $query->whereIn('id', $allowedCredentialIds);
+        } else {
+            $query->where(function ($q) use ($userId, $certificateId) {
                 $q->where(function ($q2) {
                     $q2->whereNull('user_id')->whereNull('certificate_id');
                 });
@@ -149,12 +162,17 @@ class Credential extends Model
                 if ($certificateId) {
                     $q->orWhere('certificate_id', $certificateId);
                 }
-            })
-            ->get()
-            ->filter(fn ($c) => $c->matchesUrl($url));
+            });
+        }
+
+        $candidates = $query->get()->filter(fn ($c) => $c->matchesUrl($url));
 
         if ($candidates->isEmpty()) {
             return null;
+        }
+
+        if ($allowedCredentialIds !== null && count($allowedCredentialIds) > 0) {
+            return $candidates->first();
         }
 
         // Priorizar: específica (certificado o usuario) antes que general

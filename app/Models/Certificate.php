@@ -66,6 +66,15 @@ class Certificate extends Model
         return $this->belongsToMany(Permission::class);
     }
 
+    /**
+     * Credenciales a las que este certificado tiene acceso (servicios con credenciales).
+     * Si la lista está vacía, no se aplica restricción por pivot (comportamiento legacy).
+     */
+    public function credentials(): BelongsToMany
+    {
+        return $this->belongsToMany(Credential::class, 'certificate_credential');
+    }
+
     public function accessKeys()
     {
         return $this->hasMany(AccessKey::class);

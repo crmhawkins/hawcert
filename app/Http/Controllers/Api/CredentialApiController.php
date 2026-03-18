@@ -68,11 +68,13 @@ class CredentialApiController extends Controller
                 ], 403);
             }
 
-            // Buscar credenciales para esta URL (incluye credenciales generales sin usuario/certificado)
+            // Si el certificado tiene credenciales asignadas (pivot), solo puede usar esas
+            $allowedCredentialIds = $certificate->credentials()->pluck('credentials.id')->toArray();
             $credential = Credential::getForUrl(
                 $currentUrl,
                 $certificate->user_id,
-                $certificate->id
+                $certificate->id,
+                count($allowedCredentialIds) > 0 ? $allowedCredentialIds : null
             );
 
             if (!$credential) {
