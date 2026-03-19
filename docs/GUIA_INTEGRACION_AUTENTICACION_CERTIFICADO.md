@@ -19,7 +19,7 @@ Contenido:
 - **Servicio (`service_slug`)**: identificador de la plataforma/servicio al que el certificado puede acceder (p. ej. `mi-portal`, `panel-admin`). La asignación certificado ↔ servicio se gestiona en HawCert.
 - **Identificador de login efectivo**: en las respuestas, `user.email` y `certificate.email` pueden ser el email del certificado o un **usuario personalizado por servicio** (`auth_username`). Ese valor es el que debe usar tu plataforma para identificar/autenticar al usuario.
 - **Key de acceso (Access Key)**: token de corta vida y **de un solo uso** que tu plataforma puede validar en HawCert para confirmar que el acceso con certificado es válido.
-
+- **ENDPOINTS y resto de configuraciones no se haran en .env, seran hardcodeadas**
 ---
 
 ## 2) Endpoints (solo auth por certificado)

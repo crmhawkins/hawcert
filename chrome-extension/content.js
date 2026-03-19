@@ -140,22 +140,19 @@
         log('Backend devolvió success=false', response.message || response);
         return false;
       }
-      if (!response.data) {
-        log('No hay data en la respuesta', response);
-        return false;
-      }
 
-      // Nuevo formato: data.mode = single|multiple
-      if (response.data.mode === 'multiple') {
+      // Aceptar formato nuevo (data.mode, data.credential) o legacy (credential/credentials en la raíz)
+      const data = response.data != null ? response.data : response;
+      if (data.mode === 'multiple') {
         log('Hay múltiples credenciales para esta URL; se requiere selección manual en el popup.', {
-          count: (response.data.credentials || []).length,
+          count: (data.credentials || []).length,
         });
         return false;
       }
 
-      const cred = response.data.credential || response.data.credentials;
-      if (!cred) {
-        log('No hay credencial en la respuesta', response);
+      const cred = data.credential || response.credential || (Array.isArray(data.credentials) && data.credentials.length === 1 ? data.credentials[0] : null) || (response.credentials && !Array.isArray(response.credentials) ? response.credentials : null);
+      if (!cred || typeof cred !== 'object') {
+        log('No hay credencial en la respuesta', { hasData: !!data, keys: data ? Object.keys(data) : [] });
         return false;
       }
 

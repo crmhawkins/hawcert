@@ -23,23 +23,38 @@
       font-weight: 500;
       color: #374151;
     }
-    input[type="text"],
-    textarea {
+    input[type="text"] {
       width: 100%;
       padding: 10px;
       border: 1px solid #D1D5DB;
       border-radius: 6px;
       font-size: 14px;
-      font-family: monospace;
     }
-    textarea {
-      min-height: 150px;
-      resize: vertical;
+    input[type="file"] {
+      width: 100%;
+      padding: 8px 0;
+      font-size: 14px;
     }
     .help-text {
       margin-top: 4px;
       font-size: 12px;
       color: #6B7280;
+    }
+    .cert-status {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #F3F4F6;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #374151;
+    }
+    .cert-status.ok {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+    .cert-status.warn {
+      background: #FEF3C7;
+      color: #92400E;
     }
     button {
       background: #4F46E5;
@@ -53,6 +68,14 @@
     }
     button:hover {
       background: #4338CA;
+    }
+    button.secondary {
+      background: #E5E7EB;
+      color: #374151;
+      margin-left: 8px;
+    }
+    button.secondary:hover {
+      background: #D1D5DB;
     }
     .success {
       background: #D1FAE5;
@@ -83,12 +106,14 @@
     </div>
 
     <div class="form-group">
-      <label for="certificate">Certificado X.509 (PEM)</label>
-      <textarea id="certificate" placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----" required></textarea>
-      <div class="help-text">Pega aquí tu certificado X.509 en formato PEM. Puedes descargarlo desde el panel de HawCert.</div>
+      <label for="certificateFile">Certificado X.509 (archivo PEM)</label>
+      <input type="file" id="certificateFile" accept=".pem,.crt,.cer,.txt,application/x-pem-file,text/plain">
+      <div class="help-text">Sube el archivo .pem que descargaste desde HawCert (solo la parte del certificado público, o el PEM completo si incluye certificado y clave; la API usa el certificado).</div>
+      <div id="certStatus" class="cert-status warn">Cargando…</div>
     </div>
 
-    <button type="submit">Guardar Configuración</button>
+    <button type="submit">Guardar configuración</button>
+    <button type="button" id="clearCert" class="secondary">Quitar certificado guardado</button>
   </form>
 
   <div id="success" class="success">Configuración guardada exitosamente.</div>

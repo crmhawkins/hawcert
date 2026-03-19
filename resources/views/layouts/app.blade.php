@@ -23,6 +23,7 @@
                         <a href="{{ route('credentials.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300">Credenciales</a>
                         <a href="{{ route('logs.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300">Logs</a>
                         <a href="{{ route('validator.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300">Validador</a>
+                        <a href="{{ route('extension.download.panel') }}" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:border-indigo-300 dark:text-indigo-400 dark:hover:text-indigo-300">Extensión</a>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -39,6 +40,7 @@
                             <a href="{{ route('credentials.index') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Credenciales</a>
                             <a href="{{ route('logs.index') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Logs</a>
                             <a href="{{ route('validator.index') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Validador</a>
+                            <a href="{{ route('extension.download.panel') }}" class="block px-4 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-700">Extensión (enlace)</a>
                             <div class="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
                                 <span class="block px-4 py-2 text-xs text-gray-500 dark:text-gray-400">{{ Auth::user()->name }}</span>
                                 <form method="POST" action="{{ route('logout') }}">
